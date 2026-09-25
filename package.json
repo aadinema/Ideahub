@@ -1,0 +1,19 @@
+{
+  "name": "ideahub",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test:client && npm run test:server",
+    "test:all": "npm run test:client && npm run test:server && npm run test:e2e:smoke",
+    "test:client": "cd client && npm run test",
+    "test:server": "cd server && npm run test",
+    "test:e2e": "cd e2e && npm run test",
+    "test:e2e:smoke": "cd e2e && npm run test:smoke",
+    "test:coverage": "npm run test:client -- --coverage && npm run test:server -- --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
+}

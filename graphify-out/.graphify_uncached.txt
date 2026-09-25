@@ -1,0 +1,15 @@
+/Users/aadityanema/Developer/Ideahub/ideahub/.agents/rules/graphify.md
+/Users/aadityanema/Developer/Ideahub/ideahub/.agents/workflows/graphify.md
+/Users/aadityanema/Developer/Ideahub/ideahub/ASSUMPTIONS.md
+/Users/aadityanema/Developer/Ideahub/ideahub/DEPLOYMENT.md
+/Users/aadityanema/Developer/Ideahub/ideahub/INTEGRATIONS.md
+/Users/aadityanema/Developer/Ideahub/ideahub/IdeaHub_Ideathon_FRD.md
+/Users/aadityanema/Developer/Ideahub/ideahub/IdeaHub_MERN_MasterPrompt.md
+/Users/aadityanema/Developer/Ideahub/ideahub/audit.md
+/Users/aadityanema/Developer/Ideahub/ideahub/brain/0642bd0f-92fc-4abe-8a9c-80711a8ddc2f/implementation_plan.md
+/Users/aadityanema/Developer/Ideahub/ideahub/client/index.html
+/Users/aadityanema/Developer/Ideahub/ideahub/uploads/1786213505493-wallhaven-7jlgjo_2940x1912.png
+/Users/aadityanema/Developer/Ideahub/ideahub/uploads/1789320923963-ChatGPT_Image_Nov_9__2025__07_29_48_PM.png
+/Users/aadityanema/Developer/Ideahub/ideahub/uploads/1789323369553-ChatGPT_Image_Nov_9__2025__07_29_48_PM.png
+/Users/aadityanema/Developer/Ideahub/ideahub/uploads/1789393862027-ChatGPT_Image_Nov_9__2025__07_29_48_PM.png
+/Users/aadityanema/Developer/Ideahub/ideahub/uploads/1789395153768-ChatGPT_Image_Nov_9__2025__07_29_48_PM.png
