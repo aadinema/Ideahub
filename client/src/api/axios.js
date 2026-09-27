@@ -10,7 +10,7 @@ import axios from 'axios'
 import { store } from '../store'
 import { selectAccessToken, clearCredentials, updateToken } from '../store/authSlice'
 
-const BASE_URL = '/api' // proxied by Vite to http://localhost:5000/api
+const BASE_URL = '/api' // proxied by Vite to the backend (see VITE_API_PORT in client/vite.config.js)
 
 const api = axios.create({
   baseURL: BASE_URL,

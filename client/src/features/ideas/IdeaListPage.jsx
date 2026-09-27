@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { ideasAPI } from '../../api'
 import IdeaStatusBadge from '../../components/IdeaStatusBadge'
+import usePageTitle from '../../hooks/usePageTitle';
+import { SkeletonList } from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
 import { Plus, Lightbulb, ChevronRight, Calendar } from 'lucide-react'
 
 const STATUSES = [
@@ -20,10 +24,12 @@ const STATUSES = [
 ]
 
 export default function IdeaListPage() {
+  usePageTitle("My Ideas");
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage]                 = useState(1)
+  const tabRefs = useRef([])
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['my-ideas', statusFilter, page],
     queryFn: () => ideasAPI.myIdeas({ status: statusFilter, page, limit: 20 }),
     select: (r) => r.data,
@@ -33,15 +39,30 @@ export default function IdeaListPage() {
   const ideas      = data?.data || []
   const pagination = data?.pagination
 
+  // Roving tabindex + arrow keys, per the WAI-ARIA tabs pattern.
+  const onTabKeyDown = (e, idx) => {
+    const last = STATUSES.length - 1
+    let next = null
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = idx === last ? 0 : idx + 1
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = idx === 0 ? last : idx - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = last
+    if (next === null) return
+    e.preventDefault()
+    setStatusFilter(STATUSES[next].value)
+    setPage(1)
+    tabRefs.current[next]?.focus()
+  }
+
   return (
     <div className="page-enter max-w-[1100px] mx-auto">
       {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div className="min-w-0">
           <h1 className="text-display text-3xl text-theme-text mb-1">My Ideas</h1>
           <p className="text-theme-text/80 text-sm">Track and manage all your idea submissions</p>
         </div>
-        <Link to="/ideas/new" id="btn-submit-idea-list" className="btn btn-primary">
+        <Link to="/ideas/new" id="btn-submit-idea-list" className="btn btn-primary w-full sm:w-auto flex-shrink-0">
           <Plus className="w-4 h-4" />
           Submit New Idea
         </Link>
@@ -49,13 +70,18 @@ export default function IdeaListPage() {
 
       {/* ── Status filter tabs ── */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1" role="tablist" aria-label="Filter ideas by status">
-        {STATUSES.map(({ value, label }) => (
+        {STATUSES.map(({ value, label }, i) => (
           <button
             key={value}
+            ref={(el) => { tabRefs.current[i] = el; }}
             role="tab"
+            id={`tab-status-${value || "all"}`}
+            aria-controls="ideas-tabpanel"
             aria-selected={statusFilter === value}
+            tabIndex={statusFilter === value ? 0 : -1}
+            onKeyDown={(e) => onTabKeyDown(e, i)}
             onClick={() => { setStatusFilter(value); setPage(1) }}
-            className={`btn btn-sm flex-shrink-0 transition-all ${
+            className={`btn btn-sm flex-shrink-0 transition-all duration-200 ${
               statusFilter === value
                 ? 'btn-primary'
                 : 'btn-secondary'
@@ -67,34 +93,28 @@ export default function IdeaListPage() {
       </div>
 
       {/* ── Ideas list ── */}
+      <div id="ideas-tabpanel" role="tabpanel" aria-labelledby={`tab-status-${statusFilter || "all"}`}>
       {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="glass rounded-xl p-5 animate-pulse">
-              <div className="h-5 w-2/3 bg-theme-surface rounded mb-3" />
-              <div className="h-3 w-1/3 bg-theme-surface rounded" />
-            </div>
-          ))}
-        </div>
+        <SkeletonList count={5} />
       ) : isError ? (
-        <div className="glass rounded-xl p-10 text-center text-rose-600">
-          Failed to load ideas. Please refresh the page.
-        </div>
+        <ErrorState
+          title="Couldn't load your ideas"
+          message="The list didn't load. Check your connection and try again."
+          onRetry={() => refetch()}
+          className="glass rounded-xl"
+        />
       ) : ideas.length === 0 ? (
-        <div className="glass rounded-xl p-16 flex flex-col items-center gap-5 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-theme-accent/10 flex items-center justify-center">
-            <Lightbulb className="w-8 h-8 text-theme-accent" />
-          </div>
-          <div>
-            <h3 className="text-heading text-lg text-theme-text mb-1">No ideas yet</h3>
-            <p className="text-theme-text/80 text-sm max-w-xs">
-              Share your first idea and start driving innovation in your organization.
-            </p>
-          </div>
-          <Link to="/ideas/new" id="btn-first-idea" className="btn btn-primary">
-            <Plus className="w-4 h-4" /> Submit Your First Idea
-          </Link>
-        </div>
+        <EmptyState
+          icon={Lightbulb}
+          title="No ideas yet"
+          message="Share your first idea and start driving innovation in your organization."
+          className="glass rounded-xl"
+          action={
+            <Link to="/ideas/new" id="btn-first-idea" className="btn btn-primary">
+              <Plus className="w-4 h-4" aria-hidden="true" /> Submit Your First Idea
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {ideas.map((idea) => (
@@ -143,7 +163,7 @@ export default function IdeaListPage() {
 
       {/* ── Pagination ── */}
       {pagination && pagination.pages > 1 && (
-        <div className="flex items-center justify-between mt-6" aria-label="Pagination">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-6" aria-label="Pagination">
           <p className="text-sm text-theme-text0">
             Showing {((page - 1) * pagination.limit) + 1}–{Math.min(page * pagination.limit, pagination.total)} of {pagination.total} ideas
           </p>
@@ -167,6 +187,7 @@ export default function IdeaListPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

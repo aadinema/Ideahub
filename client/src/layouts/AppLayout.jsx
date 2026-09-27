@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
@@ -20,14 +20,14 @@ import {
 // Identity is keyed by email (unique per demo account) — role ids alone cannot
 // distinguish two users holding the same role (e.g. two department evaluators).
 const ROLE_PROFILES = [
-  { id: ROLES.EMPLOYEE,             label: 'Employee',                  icon: User,          color: '#3b82f6', email: 'employee@ideahub.local' },
-  { id: ROLES.SUPERVISOR,           label: 'Supervisor',                icon: UserCheck,     color: '#f59e0b', email: 'supervisor@ideahub.local' },
-  { id: ROLES.DEPT_INNOVATION_TEAM, label: 'Dept. Evaluator · Anita',   icon: ClipboardList, color: '#10b981', email: 'dept.team@ideahub.local' },
-  { id: ROLES.DEPT_INNOVATION_TEAM, label: 'Dept. Evaluator · Suresh',  icon: ClipboardList, color: '#059669', email: 'dept.team2@ideahub.local' },
-  { id: ROLES.INNOVATION_COMMITTEE, label: 'Committee Member',          icon: Users,         color: '#8b5cf6', email: 'committee@ideahub.local' },
-  { id: ROLES.IMPLEMENTATION_OWNER, label: 'Implementation Owner',      icon: Briefcase,     color: '#ec4899', email: 'impl.owner@ideahub.local' },
-  { id: ROLES.CEO,                  label: 'CEO',                       icon: Crown,         color: '#6366f1', email: 'ceo@ideahub.local' },
-  { id: ROLES.ADMIN,                label: 'Admin',                     icon: Shield,        color: '#ef4444', email: 'admin@ideahub.local' },
+  { id: ROLES.EMPLOYEE,             label: 'Employee',                  icon: User,          color: 'var(--role-employee)',     email: 'employee@ideahub.local' },
+  { id: ROLES.SUPERVISOR,           label: 'Supervisor',                icon: UserCheck,     color: 'var(--role-supervisor)',   email: 'supervisor@ideahub.local' },
+  { id: ROLES.DEPT_INNOVATION_TEAM, label: 'Dept. Evaluator · Anita',   icon: ClipboardList, color: 'var(--role-evaluator)',    email: 'dept.team@ideahub.local' },
+  { id: ROLES.DEPT_INNOVATION_TEAM, label: 'Dept. Evaluator · Suresh',  icon: ClipboardList, color: 'var(--role-evaluator-2)',  email: 'dept.team2@ideahub.local' },
+  { id: ROLES.INNOVATION_COMMITTEE, label: 'Committee Member',          icon: Users,         color: 'var(--role-committee)',    email: 'committee@ideahub.local' },
+  { id: ROLES.IMPLEMENTATION_OWNER, label: 'Implementation Owner',      icon: Briefcase,     color: 'var(--role-owner)',        email: 'impl.owner@ideahub.local' },
+  { id: ROLES.CEO,                  label: 'CEO',                       icon: Crown,         color: 'var(--role-ceo)',          email: 'ceo@ideahub.local' },
+  { id: ROLES.ADMIN,                label: 'Admin',                     icon: Shield,        color: 'var(--role-admin)',        email: 'admin@ideahub.local' },
 ]
 
 const DEMO_PASSWORD = 'IdeaHub@Dev2026!'
@@ -50,9 +50,15 @@ function AppLayout() {
   const user    = useSelector(selectCurrentUser)
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { hasRole } = useRole()
   const { theme, toggle: toggleTheme, isDark } = useTheme()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Breadcrumb: the longest NAV_ITEMS route that prefixes the current path.
+  const currentNav = NAV_ITEMS
+    .filter((i) => pathname === i.to || pathname.startsWith(`${i.to}/`))
+    .sort((a, b) => b.to.length - a.to.length)[0]
 
   // Find current profile by email (unique per demo account), falling back to
   // a role match for custom users not in the switcher list.
@@ -91,11 +97,11 @@ function AppLayout() {
       {/* Logo */}
       <div className="h-[64px] flex items-center gap-3 px-5 border-b border-theme-border/50">
         <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0">
-          <Zap className="w-4 h-4 text-white" />
+          <Zap className="w-4 h-4 text-white" aria-hidden="true" />
         </div>
         <div>
           <span className="text-heading text-base text-theme-text">IdeaHub</span>
-          <div className="text-label text-[10px] mt-0.5">Innovation Platform</div>
+          <div className="text-label text-[11px] mt-0.5">Innovation Platform</div>
         </div>
       </div>
 
@@ -108,7 +114,7 @@ function AppLayout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
           >
-            <Icon className="w-4 h-4 flex-shrink-0" />
+            <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
             <span>{label}</span>
           </NavLink>
         ))}
@@ -127,7 +133,7 @@ function AppLayout() {
             <p className="text-sm font-semibold text-theme-text truncate">{user?.name}</p>
             <p className="text-xs text-theme-text0 truncate">{user?.department}</p>
             <span 
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium text-white mt-1"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium text-white mt-1"
               style={{ backgroundColor: currentProfile.color }}
             >
               <currentProfile.icon className="w-2.5 h-2.5" />
@@ -138,9 +144,9 @@ function AppLayout() {
         <button
           onClick={handleLogout}
           id="btn-logout"
-          className="sidebar-item w-full mt-1 text-theme-text0 hover:!text-rose-500"
+          className="sidebar-item w-full mt-1 text-theme-text0 hover:!text-error-text"
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut className="w-4 h-4" aria-hidden="true" />
           <span>Sign out</span>
         </button>
       </div>
@@ -188,14 +194,18 @@ function AppLayout() {
             <button
               onClick={() => setMobileOpen(true)}
               aria-label="Open menu"
-              className="md:hidden w-9 h-9 rounded-lg btn-ghost flex items-center justify-center"
+              className="md:hidden w-10 h-10 rounded-lg btn-ghost flex items-center justify-center"
             >
               <MenuIcon className="w-4 h-4 text-theme-text/80" />
             </button>
             <div className="hidden sm:flex items-center gap-1 text-sm text-theme-text0">
               <span>IdeaHub</span>
-              <ChevronRight className="w-3 h-3" />
-              <span className="text-theme-text/80">Platform</span>
+              {currentNav && (
+                <>
+                  <ChevronRight className="w-3 h-3" aria-hidden="true" />
+                  <span className="text-theme-text/80">{currentNav.label}</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -204,7 +214,7 @@ function AppLayout() {
               onClick={toggleTheme}
               id="btn-theme-toggle"
               aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              className="w-9 h-9 rounded-lg btn-ghost flex items-center justify-center"
+              className="w-10 h-10 rounded-lg btn-ghost flex items-center justify-center"
             >
               {isDark ? <Sun className="w-4 h-4 text-theme-text/80" /> : <Moon className="w-4 h-4 text-theme-text/80" />}
             </button>
@@ -247,7 +257,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
       <Menu.Button
         id="btn-profile-switcher"
         aria-label={`Profile menu. Current role: ${currentProfile.label}`}
-        className="w-9 h-9 rounded-lg btn-ghost flex items-center justify-center relative group"
+        className="w-10 h-10 rounded-lg btn-ghost flex items-center justify-center relative group"
       >
         <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center text-white text-xs font-bold">
           {initials}
@@ -279,9 +289,9 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
               </div>
             </div>
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-[10px] font-medium text-theme-text0 uppercase tracking-wider">Current Role</span>
+              <span className="text-[11px] font-medium text-theme-text0 uppercase tracking-wider">Current Role</span>
               <span 
-                className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white flex items-center gap-1"
+                className="px-2 py-0.5 rounded-full text-[11px] font-medium text-white flex items-center gap-1"
                 style={{ backgroundColor: currentProfile.color }}
               >
                 <currentProfile.icon className="w-2.5 h-2.5" />
@@ -306,7 +316,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
                         role="option"
                         aria-selected={isActive}
                         aria-disabled={isActive}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-150 flex items-center gap-3 ${
+                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-3 ${
                           isActive
                             ? 'bg-theme-accent/10 text-theme-text cursor-default'
                             : 'text-theme-text0 hover:bg-theme-surface/60 hover:text-theme-text focus:bg-theme-surface/60 focus:text-theme-text'
@@ -317,7 +327,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
                           className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             isActive ? 'text-white' : 'text-theme-text/60'
                           }`}
-                          style={{ backgroundColor: isActive ? profile.color : `${profile.color}15` }}
+                          style={{ backgroundColor: isActive ? profile.color : `color-mix(in srgb, ${profile.color} 14%, transparent)` }}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
@@ -345,7 +355,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
 
           {/* Footer hint */}
           <div className="px-4 py-3 border-t border-theme-border/50">
-            <p className="text-[10px] text-theme-text0 text-center">
+            <p className="text-[11px] text-theme-text0 text-center">
               Development mode — switch profiles to test role-based views
             </p>
           </div>

@@ -29,8 +29,9 @@ const FORMATS = [
  * @param {(html: string) => void} onChange
  * @param {string} [placeholder]
  * @param {string} [id]
+ * @param {string} [ariaLabel] accessible name for the contenteditable region
  */
-export default function RichTextEditor({ value, onChange, placeholder, id }) {
+export default function RichTextEditor({ value, onChange, placeholder, id, ariaLabel = 'Rich text editor' }) {
   return (
     <div id={id} className="rich-text-editor">
       <ReactQuill
@@ -40,6 +41,7 @@ export default function RichTextEditor({ value, onChange, placeholder, id }) {
         modules={MODULES}
         formats={FORMATS}
         placeholder={placeholder}
+        aria-label={ariaLabel}
       />
     </div>
   );

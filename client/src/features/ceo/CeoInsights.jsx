@@ -14,8 +14,8 @@ import {
 } from './ceoUtils'
 
 const SEVERITY = {
-  high:   { color: 'var(--error)',   Icon: AlertOctagon },
-  medium: { color: 'var(--warning)', Icon: Flame },
+  high:   { color: 'var(--error-text)',   Icon: AlertOctagon },
+  medium: { color: 'var(--warning-text)', Icon: Flame },
 }
 
 const ACTION_LABELS = {
@@ -63,7 +63,7 @@ export function AttentionPanel({ insights, definitions = {}, loading, onDrill })
               <li key={`${item.ideaId}-${item.type}-${i}`}>
                 <div
                   className="rounded-xl border p-3.5 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4"
-                  style={{ borderColor: `${sev.color}35`, background: `${sev.color}08` }}
+                  style={{ borderColor: `color-mix(in srgb, ${sev.color} 35%, transparent)`, background: `color-mix(in srgb, ${sev.color} 8%, transparent)` }}
                 >
                   <div className="flex items-start gap-2.5 min-w-0 flex-1">
                     <Icon className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: sev.color }} aria-hidden="true" />
@@ -80,7 +80,7 @@ export function AttentionPanel({ insights, definitions = {}, loading, onDrill })
                   <div className="flex items-center gap-2 flex-shrink-0 sm:justify-end">
                     <span
                       className="text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded"
-                      style={{ color: sev.color, background: `${sev.color}15` }}
+                      style={{ color: sev.color, background: `color-mix(in srgb, ${sev.color} 15%, transparent)` }}
                       title="Age in business days"
                     >
                       {formatDays(item.ageDays)}
@@ -113,11 +113,11 @@ export function AttentionPanel({ insights, definitions = {}, loading, onDrill })
 
 // ── 2. Strategic & High-Impact Ideas ────────────────────────────────────────
 const SIGNAL_META = {
-  realized_value:     { label: 'Realized value', color: 'var(--success)' },
-  estimated_value:    { label: 'Est. value',     color: '#818CF8' },
-  strong_evaluation:  { label: 'High eval score', color: '#a78bfa' },
-  featured:           { label: 'Featured',       color: 'var(--warning)' },
-  approved:           { label: 'Approved',       color: '#3b82f6' },
+  realized_value:     { label: 'Realized value', color: 'var(--success-text)' },
+  estimated_value:    { label: 'Est. value',     color: 'var(--primary)' },
+  strong_evaluation:  { label: 'High eval score', color: 'var(--purple-text)' },
+  featured:           { label: 'Featured',       color: 'var(--warning-text)' },
+  approved:           { label: 'Approved',       color: 'var(--info-text)' },
 }
 
 export function StrategicPanel({ insights, definitions = {}, loading }) {
@@ -169,8 +169,8 @@ export function StrategicPanel({ insights, definitions = {}, loading }) {
                       return (
                         <span
                           key={s}
-                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-                          style={{ color: meta.color, background: `${meta.color}15` }}
+                          className="text-[11px] font-semibold px-1.5 py-0.5 rounded"
+                          style={{ color: meta.color, background: `color-mix(in srgb, ${meta.color} 15%, transparent)` }}
                         >
                           {meta.label}
                         </span>
@@ -254,7 +254,7 @@ export function ActivityPanel({ insights, definitions = {}, loading }) {
               >
                 {item.ideaTitle} <span className="opacity-70">({item.humanId})</span>
               </Link>
-              <span className="text-[10px] text-theme-text0 block mt-0.5" title={new Date(item.timestamp).toLocaleString('en-IN')}>
+              <span className="text-[11px] text-theme-text0 block mt-0.5" title={new Date(item.timestamp).toLocaleString('en-IN')}>
                 {timeAgo(item.timestamp)}
               </span>
             </li>

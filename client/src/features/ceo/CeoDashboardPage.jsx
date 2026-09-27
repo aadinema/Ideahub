@@ -36,6 +36,7 @@ import CeoPipeline from './CeoPipeline'
 import CeoDepartments from './CeoDepartments'
 import CeoDrillDown from './CeoDrillDown'
 import { AttentionPanel, StrategicPanel, ActivityPanel } from './CeoInsights'
+import usePageTitle from '../../hooks/usePageTitle';
 import { BusinessImpactPanel, ParticipationPanel } from './CeoImpact'
 
 const greeting = () => {
@@ -48,6 +49,7 @@ const greeting = () => {
 const is403 = (err) => err?.response?.status === 403 || err?.status === 403
 
 export default function CeoDashboardPage() {
+  usePageTitle('CEO Dashboard');
   const [searchParams, setSearchParams] = useSearchParams()
   const user = useSelector(selectCurrentUser)
   const [drillQuery, setDrillQuery] = useState(null)
@@ -100,7 +102,7 @@ export default function CeoDashboardPage() {
     return (
       <div className="page-enter max-w-[560px] mx-auto mt-16 text-center">
         <div className="glass rounded-2xl p-8">
-          <ShieldAlert className="w-10 h-10 text-amber-500 mx-auto mb-4" aria-hidden="true" />
+          <ShieldAlert className="w-10 h-10 text-warning mx-auto mb-4" aria-hidden="true" />
           <h1 className="text-heading text-lg text-theme-text">Executive access required</h1>
           <p className="text-sm text-theme-text0 mt-2 leading-relaxed">
             The CEO Dashboard is restricted to the C-Suite role on the server.
@@ -147,8 +149,8 @@ export default function CeoDashboardPage() {
               <CalendarDays className="w-3.5 h-3.5" aria-hidden="true" />
               {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-              style={{ color: '#6366f1', background: '#6366f115' }} role="status">
+            <span className="px-1.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: 'var(--primary)', background: 'var(--primary-light)' }} role="status">
               {ROLES.CEO}
             </span>
           </p>
@@ -194,7 +196,7 @@ export default function CeoDashboardPage() {
         aria-label="Executive KPIs"
       >
         <KpiTile
-          icon={Lightbulb} label="Total Ideas" color="#f0b90b" delay={0}
+          icon={Lightbulb} label="Total Ideas" color="var(--primary)" delay={0}
           loading={overviewQ.isLoading}
           value={formatNum(kpis?.totalIdeas)}
           sub={`${periodLabel} · non-draft`}
@@ -202,7 +204,7 @@ export default function CeoDashboardPage() {
           onClick={() => drill({ title: 'All Ideas', note: `${periodLabel}${department ? ` · ${department}` : ''}`, params: { status: undefined, limit: 50, department: department || undefined } })}
         />
         <KpiTile
-          icon={Activity} label="Active Ideas" color="#3b82f6" delay={50}
+          icon={Activity} label="Active Ideas" color="var(--info-text)" delay={50}
           loading={overviewQ.isLoading}
           value={formatNum(kpis?.activeIdeas)}
           sub="currently in workflow"
@@ -210,7 +212,7 @@ export default function CeoDashboardPage() {
           onClick={() => drill({ title: 'Active Ideas', note: 'Currently moving through the workflow', params: { status: IDEA_STATUS_GROUPS.ACTIVE.join(','), limit: 50, department: department || undefined } })}
         />
         <KpiTile
-          icon={CheckCircle2} label="Approved" color="#a78bfa" delay={100}
+          icon={CheckCircle2} label="Approved" color="var(--purple-text)" delay={100}
           loading={overviewQ.isLoading}
           value={formatNum(kpis?.approvedIdeas)}
           sub={`${formatPct(kpis?.approvalRate)} of ideas approved`}
@@ -218,7 +220,7 @@ export default function CeoDashboardPage() {
           onClick={() => drill({ title: 'Approved Ideas', note: 'At or past committee approval', params: { status: IDEA_STATUS_GROUPS.APPROVED.join(','), limit: 50, department: department || undefined } })}
         />
         <KpiTile
-          icon={Rocket} label="Implemented" color="#f59e0b" delay={150}
+          icon={Rocket} label="Implemented" color="var(--warning-text)" delay={150}
           loading={overviewQ.isLoading}
           value={formatNum(kpis?.implementedIdeas)}
           sub={`of ${formatNum(kpis?.approvedIdeas)} approved`}
@@ -226,7 +228,7 @@ export default function CeoDashboardPage() {
           onClick={() => drill({ title: 'Implemented Ideas', note: 'Implementation completed or beyond', params: { status: IDEA_STATUS_GROUPS.IMPLEMENTED.join(','), limit: 50, department: department || undefined } })}
         />
         <KpiTile
-          icon={Percent} label="Implementation Rate" color="#6366f1" delay={200}
+          icon={Percent} label="Implementation Rate" color="var(--primary)" delay={200}
           loading={overviewQ.isLoading}
           value={formatPct(kpis?.implementationRate)}
           sub="implemented ÷ approved"
@@ -234,7 +236,7 @@ export default function CeoDashboardPage() {
           onClick={() => drill({ title: 'Approved Ideas (rate basis)', note: 'Implementation rate is computed over this cohort', params: { status: IDEA_STATUS_GROUPS.APPROVED.join(','), limit: 50, department: department || undefined } })}
         />
         <KpiTile
-          icon={IndianRupee} label="Realized Value" color="#10b981" delay={250}
+          icon={IndianRupee} label="Realized Value" color="var(--success-text)" delay={250}
           loading={overviewQ.isLoading}
           value={formatINR(overview?.businessImpact?.realizedINR)}
           sub={

@@ -4,8 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { implementationsAPI } from '../../api';
 import Modal from '../../components/Modal';
 import { Play, AlertCircle, Award, CheckSquare, Square, AlertTriangle } from 'lucide-react';
+import EmptyState from '../../components/EmptyState';
+import usePageTitle from '../../hooks/usePageTitle';
+import ErrorState from '../../components/ErrorState';
 
 export default function ImplementationBoardPage() {
+  usePageTitle("Implementation Board");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -13,7 +17,7 @@ export default function ImplementationBoardPage() {
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
 
-  const { data: implementations = [], isLoading } = useQuery({
+  const { data: implementations = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['myImplementations'],
     queryFn: () => implementationsAPI.getMy().then(r => r.data.data),
   });
@@ -55,15 +59,22 @@ export default function ImplementationBoardPage() {
       {isLoading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="glass rounded-2xl h-36 animate-pulse" />
+            <div key={i} className="rounded-2xl h-36 skeleton" />
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState
+          title="Couldn't load your implementations"
+          message="Your implementation records didn't load. Check your connection and try again."
+          onRetry={() => refetch()}
+        />
       ) : implementations.length === 0 ? (
-        <div className="glass rounded-2xl p-16 text-center">
-          <Play className="w-12 h-12 text-theme-text/60 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-theme-text/80">No active implementations assigned</h3>
-          <p className="text-sm text-theme-text0 mt-1">When the Innovation Committee assigns an idea to you, it will appear here.</p>
-        </div>
+        <EmptyState
+          icon={Play}
+          title="No active implementations assigned"
+          message="When the Innovation Committee assigns an idea to you, it will appear here."
+          className="glass rounded-2xl"
+        />
       ) : (
         <div className="space-y-6">
           {implementations.map((impl) => {
@@ -71,7 +82,7 @@ export default function ImplementationBoardPage() {
             const isOverdue = !isCompleted && impl.targetCompletionDate && new Date(impl.targetCompletionDate) < new Date();
 
             return (
-              <div key={impl._id} className={`glass rounded-2xl p-6 relative overflow-hidden ${isOverdue ? 'border-rose-500/40' : 'border-theme-border/50'}`}>
+              <div key={impl._id} className={`glass rounded-2xl p-6 relative overflow-hidden ${isOverdue ? 'border-error/40' : 'border-theme-border/50'}`}>
                 <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -79,12 +90,12 @@ export default function ImplementationBoardPage() {
                         {impl.ideaId?.ideaId}
                       </span>
                       <span className="text-xs text-theme-text0">·</span>
-                      <span className={`text-xs ${isOverdue ? 'text-rose-600 font-semibold' : 'text-theme-text/80'}`}>
+                      <span className={`text-xs ${isOverdue ? 'text-error-text font-semibold' : 'text-theme-text/80'}`}>
                         Target: {new Date(impl.targetCompletionDate).toLocaleDateString('en-IN')}
                       </span>
                       {isOverdue && (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 bg-rose-500/10 border border-rose-500/25 px-2 py-0.5 rounded-full">
-                          <AlertTriangle className="w-3 h-3" /> Overdue
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-error-text bg-error-light border border-error/20 px-2 py-0.5 rounded-full">
+                          <AlertTriangle className="w-3 h-3" aria-hidden="true" /> Overdue
                         </span>
                       )}
                     </div>
@@ -95,11 +106,11 @@ export default function ImplementationBoardPage() {
                     <div className="w-full max-w-md mt-4">
                       <div className="flex justify-between text-xs mb-1 font-semibold">
                         <span className="text-theme-text/80">Implementation Progress</span>
-                        <span className={isCompleted ? 'text-emerald-600' : 'text-theme-accent'}>{impl.progressPercent}%</span>
+                        <span className={isCompleted ? 'text-success-text' : 'text-theme-accent'}>{impl.progressPercent}%</span>
                       </div>
                       <div className="w-full h-2 bg-theme-surface rounded-full overflow-hidden">
                         <div
-                          className={`h-full transition-all duration-500 ${isCompleted ? 'bg-emerald-500' : 'gradient-brand'}`}
+                          className={`h-full transition-all duration-500 ${isCompleted ? 'bg-success' : 'gradient-brand'}`}
                           style={{ width: `${impl.progressPercent}%` }}
                         />
                       </div>
@@ -113,7 +124,7 @@ export default function ImplementationBoardPage() {
                     </button>
                     {isCompleted && (
                       <button onClick={() => navigate(`/benefits/record/${impl.ideaId._id}/${impl._id}`)} className="btn btn-primary flex-1 sm:flex-none">
-                        <Award className="w-4 h-4" /> Record Benefits
+                        <Award className="w-4 h-4" aria-hidden="true" /> Record Benefits
                       </button>
                     )}
                   </div>
@@ -125,7 +136,7 @@ export default function ImplementationBoardPage() {
                     {impl.milestones.map((m, idx) => (
                       <div key={idx} className="flex items-center gap-2 text-xs text-theme-text/80 bg-theme-surface/40 px-3 py-1.5 rounded-lg border border-theme-border">
                         {m.status === 'completed' ? (
-                          <CheckSquare className="w-4 h-4 text-emerald-600" />
+                          <CheckSquare className="w-4 h-4 text-success" />
                         ) : (
                           <Square className="w-4 h-4 text-theme-text/60" />
                         )}
@@ -149,23 +160,24 @@ export default function ImplementationBoardPage() {
         size="md"
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+          <div className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" /> {error}
           </div>
         )}
 
         <form onSubmit={handleSaveProgress} className="space-y-6">
           <div>
             <div className="flex justify-between text-sm font-semibold mb-2">
-              <label className="text-label">Completion Percentage</label>
+              <label htmlFor="implementation-progress" className="text-label">Completion Percentage</label>
               <span className="text-theme-accent">{progress}%</span>
             </div>
             <input
+              id="implementation-progress"
               type="range"
               min="0" max="100" step="5"
               value={progress}
               onChange={(e) => setProgress(e.target.value)}
-              className="w-full accent-theme-accent h-2 bg-theme-surface rounded-lg appearance-none cursor-pointer"
+              className="range"
             />
             <div className="flex justify-between text-xs text-theme-text0 mt-1">
               <span>0%</span>

@@ -3,7 +3,7 @@
  * Tabs: Users (roles[] array + create + deactivate), Targets (TARGET_TYPE enum),
  * Criteria (weighted 1–10 set), Announcements (rich text CRUD), Audit Log viewer.
  */
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, eventsAPI } from '../../api';
 import {
@@ -14,6 +14,9 @@ import {
 import Modal from '../../components/Modal';
 import RichTextEditor from '../../components/RichTextEditor';
 import RichText from '../../components/RichText';
+import ErrorState from '../../components/ErrorState';
+import { SkeletonRows } from '../../components/Skeleton';
+import usePageTitle from '../../hooks/usePageTitle';
 import {
   Users, Target, SlidersHorizontal, Megaphone, ScrollText,
   AlertCircle, Plus, Trash2, UserPlus, Power,
@@ -49,38 +52,61 @@ const EVENT_LABEL = (v = '') =>
   v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function AdminDashboardPage() {
+  usePageTitle("Admin Control Center");
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('users');
+  const tabRefs = useRef([]);
+
+  // Roving tabindex + arrow-key navigation, per the WAI-ARIA tabs pattern.
+  const onTabKeyDown = (e, idx) => {
+    const last = TABS.length - 1;
+    let next = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = idx === last ? 0 : idx + 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = idx === 0 ? last : idx - 1;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = last;
+    if (next === null) return;
+    e.preventDefault();
+    setActiveTab(TABS[next].id);
+    tabRefs.current[next]?.focus();
+  };
 
   return (
     <div className="page-enter max-w-[1400px] mx-auto pb-12">
       <div className="mb-8">
-        <h1 className="text-display text-4xl text-theme-text mb-2">Admin Control Center</h1>
+        <h1 className="text-display text-3xl text-theme-text mb-2">Admin Control Center</h1>
         <p className="text-theme-text/80">Manage RBAC roles, department targets, evaluation criteria, announcements and the audit trail.</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-theme-border mb-8 gap-1 overflow-x-auto" role="tablist">
-        {TABS.map(({ id, label, icon: Icon }) => (
+      <div className="flex border-b border-theme-border mb-8 gap-1 overflow-x-auto" role="tablist" aria-label="Admin sections">
+        {TABS.map(({ id, label, icon: Icon }, i) => (
           <button
             key={id}
+            ref={(el) => { tabRefs.current[i] = el; }}
             role="tab"
+            id={`admin-tab-${id}`}
+            aria-controls={`admin-panel-${id}`}
             aria-selected={activeTab === id}
+            tabIndex={activeTab === id ? 0 : -1}
+            onKeyDown={(e) => onTabKeyDown(e, i)}
             onClick={() => setActiveTab(id)}
             className={`pb-4 pt-1 px-3 font-semibold text-sm flex items-center gap-2 transition-colors relative whitespace-nowrap ${activeTab === id ? 'text-theme-accent' : 'text-theme-text/80 hover:text-theme-text'}`}
           >
-            <Icon className="w-4 h-4" /> {label}
+            <Icon className="w-4 h-4" aria-hidden="true" /> {label}
             {activeTab === id && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-theme-accent rounded-full" />}
           </button>
         ))}
       </div>
 
+      <div role="tabpanel" id={`admin-panel-${activeTab}`} aria-labelledby={`admin-tab-${activeTab}`}>
       {activeTab === 'users'         && <UsersTab queryClient={queryClient} />}
       {activeTab === 'targets'       && <TargetsTab queryClient={queryClient} />}
       {activeTab === 'criteria'      && <CriteriaTab queryClient={queryClient} />}
       {activeTab === 'events'        && <EventsTab queryClient={queryClient} />}
       {activeTab === 'announcements' && <AnnouncementsTab queryClient={queryClient} />}
       {activeTab === 'audit'         && <AuditTab />}
+      </div>
     </div>
   );
 }
@@ -93,7 +119,7 @@ function UsersTab({ queryClient }) {
     employeeId: '', name: '', email: '', password: '', department: 'Engineering', roles: [ROLES.EMPLOYEE],
   });
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['adminUsers'],
     queryFn: () => adminAPI.getUsers().then((r) => r.data.data),
   });
@@ -133,40 +159,43 @@ function UsersTab({ queryClient }) {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-theme-text">User Accounts & Role Assignments</h3>
+        <h2 className="text-lg font-bold text-theme-text">User Accounts & Role Assignments</h2>
         <button onClick={() => setShowCreate(true)} className="btn btn-primary btn-sm">
           <UserPlus className="w-4 h-4" /> Add User
         </button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+        <SkeletonRows count={5} />
+      ) : isError ? (
+        <ErrorState title="Couldn't load users" message="The user directory didn't load. Check your connection and try again." onRetry={() => refetch()} />
       ) : (
         <div className="table-responsive">
-          <table className="w-full text-left text-sm text-theme-text/80">
-            <thead className="bg-theme-surface/50 text-xs font-semibold text-theme-text/80 uppercase tracking-wider">
+          <table className="table-base">
+            <caption className="sr-only">User accounts, roles, and activation status</caption>
+            <thead>
               <tr>
-                <th className="p-4 rounded-l-xl">User</th>
-                <th className="p-4">Department</th>
-                <th className="p-4">Roles</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 rounded-r-xl">Actions</th>
+                <th scope="col">User</th>
+                <th scope="col">Department</th>
+                <th scope="col">Roles</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-theme-border/50">
+            <tbody>
               {users.map((user) => {
                 const primaryRole = user.roles?.[0] || ROLES.EMPLOYEE;
                 return (
-                  <tr key={user._id} className="hover:bg-theme-surface/30 transition-colors">
-                    <td className="p-4 font-semibold text-theme-text">
+                  <tr key={user._id}>
+                    <td className="font-semibold text-theme-text">
                       <div>{user.name}</div>
                       <div className="text-xs text-theme-text0 font-normal">{user.email}</div>
                     </td>
-                    <td className="p-4">{user.department}</td>
-                    <td className="p-4">
+                    <td>{user.department}</td>
+                    <td>
                       <div className="flex flex-wrap gap-1 mb-2">
                         {(user.roles || []).map((r) => (
-                          <span key={r} className="text-[10px] font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
+                          <span key={r} className="text-[11px] font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
                             {ROLE_LABEL(r)}
                           </span>
                         ))}
@@ -180,12 +209,12 @@ function UsersTab({ queryClient }) {
                         {ALL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABEL(r)}</option>)}
                       </select>
                     </td>
-                    <td className="p-4">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${user.isActive ? 'bg-emerald-500/20 text-emerald-600' : 'bg-rose-500/20 text-rose-600'}`}>
+                    <td>
+                      <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${user.isActive ? 'bg-success/20 text-success-text' : 'bg-error/20 text-error-text'}`}>
                         {user.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td>
                       <button
                         onClick={() => activeMutation.mutate({ id: user._id, isActive: !user.isActive })}
                         disabled={activeMutation.isPending}
@@ -205,37 +234,37 @@ function UsersTab({ queryClient }) {
       {/* Create user modal */}
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title="Add New User" size="lg">
         {createError && (
-          <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm flex items-start gap-2">
+          <div role="alert" className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><span>{createError}</span>
           </div>
         )}
         <form onSubmit={submitCreate} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-label block mb-2">Employee ID <span className="text-rose-500">*</span></label>
-              <input className="input-base" value={createForm.employeeId} onChange={(e) => setCreateForm({ ...createForm, employeeId: e.target.value })} required />
+              <label htmlFor="create-employee-id" className="text-label block mb-2">Employee ID <span className="text-error-text">*</span></label>
+              <input id="create-employee-id" className="input-base" value={createForm.employeeId} onChange={(e) => setCreateForm({ ...createForm, employeeId: e.target.value })} required />
             </div>
             <div>
-              <label className="text-label block mb-2">Full Name <span className="text-rose-500">*</span></label>
-              <input className="input-base" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} required />
+              <label htmlFor="create-full-name" className="text-label block mb-2">Full Name <span className="text-error-text">*</span></label>
+              <input id="create-full-name" className="input-base" value={createForm.name} onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })} required />
             </div>
             <div>
-              <label className="text-label block mb-2">Email <span className="text-rose-500">*</span></label>
-              <input type="email" className="input-base" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} required />
+              <label htmlFor="create-email" className="text-label block mb-2">Email <span className="text-error-text">*</span></label>
+              <input id="create-email" type="email" className="input-base" value={createForm.email} onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })} required />
             </div>
             <div>
-              <label className="text-label block mb-2">Temp Password <span className="text-rose-500">*</span></label>
-              <input type="text" className="input-base" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} required />
+              <label htmlFor="create-temp-password" className="text-label block mb-2">Temp Password <span className="text-error-text">*</span></label>
+              <input id="create-temp-password" type="text" className="input-base" value={createForm.password} onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })} required />
             </div>
             <div>
-              <label className="text-label block mb-2">Department <span className="text-rose-500">*</span></label>
-              <select className="input-base" value={createForm.department} onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}>
+              <label htmlFor="create-department" className="text-label block mb-2">Department <span className="text-error-text">*</span></label>
+              <select id="create-department" className="input-base" value={createForm.department} onChange={(e) => setCreateForm({ ...createForm, department: e.target.value })}>
                 {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="text-label block mb-2">Roles <span className="text-rose-500">*</span></label>
+            <label className="text-label block mb-2">Roles <span className="text-error-text">*</span></label>
             <div className="flex flex-wrap gap-2">
               {ALL_ROLES.map((r) => {
                 const on = createForm.roles.includes(r);
@@ -269,7 +298,7 @@ function TargetsTab({ queryClient }) {
     targetValue: 50,
   });
 
-  const { data: targets = [], isLoading } = useQuery({
+  const { data: targets = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['adminTargets'],
     queryFn: () => adminAPI.getTargets().then((r) => r.data.data),
   });
@@ -286,27 +315,27 @@ function TargetsTab({ queryClient }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-theme-text mb-4">Set Department Target</h3>
+        <h2 className="text-lg font-bold text-theme-text mb-4">Set Department Target</h2>
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-label block mb-2">Department</label>
-            <select value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="input-base">
+            <label htmlFor="target-department" className="text-label block mb-2">Department</label>
+            <select id="target-department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="input-base">
               {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-label block mb-2">Financial Year</label>
-            <input type="text" value={form.financialYear} onChange={(e) => setForm({ ...form, financialYear: e.target.value })} className="input-base" />
+            <label htmlFor="target-financial-year" className="text-label block mb-2">Financial Year</label>
+            <input id="target-financial-year" type="text" value={form.financialYear} onChange={(e) => setForm({ ...form, financialYear: e.target.value })} className="input-base" />
           </div>
           <div>
-            <label className="text-label block mb-2">Target Type</label>
-            <select value={form.targetType} onChange={(e) => setForm({ ...form, targetType: e.target.value })} className="input-base">
+            <label htmlFor="target-type" className="text-label block mb-2">Target Type</label>
+            <select id="target-type" value={form.targetType} onChange={(e) => setForm({ ...form, targetType: e.target.value })} className="input-base">
               {Object.values(TARGET_TYPE).map((t) => <option key={t} value={t}>{TARGET_TYPE_LABEL[t]}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-label block mb-2">Target Quota</label>
-            <input type="number" value={form.targetValue} onChange={(e) => setForm({ ...form, targetValue: e.target.value })} className="input-base" min="1" />
+            <label htmlFor="target-quota" className="text-label block mb-2">Target Quota</label>
+            <input id="target-quota" type="number" value={form.targetValue} onChange={(e) => setForm({ ...form, targetValue: e.target.value })} className="input-base" min="1" />
           </div>
           <button type="submit" className="btn btn-primary w-full" disabled={mutation.isPending}>
             {mutation.isPending ? 'Saving…' : 'Save Department Target'}
@@ -315,9 +344,11 @@ function TargetsTab({ queryClient }) {
       </div>
 
       <div className="lg:col-span-2 glass rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-theme-text mb-6">Configured Department Targets</h3>
+        <h2 className="text-lg font-bold text-theme-text mb-6">Configured Department Targets</h2>
         {isLoading ? (
-          <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+          <SkeletonRows count={3} />
+        ) : isError ? (
+          <ErrorState title="Couldn't load targets" message="Department targets didn't load. Check your connection and try again." onRetry={() => refetch()} />
         ) : targets.length === 0 ? (
           <p className="text-sm text-theme-text0 italic">No targets configured yet.</p>
         ) : (
@@ -344,7 +375,7 @@ function CriteriaTab({ queryClient }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const { data: criteria = [], isLoading } = useQuery({
+  const { data: criteria = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['adminCriteria'],
     queryFn: () => adminAPI.getCriteria().then((r) => r.data.data),
   });
@@ -385,11 +416,11 @@ function CriteriaTab({ queryClient }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-theme-text mb-1">Define Evaluation Criteria</h3>
+        <h2 className="text-lg font-bold text-theme-text mb-1">Define Evaluation Criteria</h2>
         <p className="text-sm text-theme-text0 mb-4">Weights are decimals (0–1) and must total 100%. Scores are on a 1–10 scale.</p>
 
-        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{error}</div>}
-        {success && <div className="mb-4 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 text-sm">{success}</div>}
+        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm">{error}</div>}
+        {success && <div className="mb-4 p-3 rounded-lg bg-success-light border border-success/20 text-success-text text-sm">{success}</div>}
 
         <form onSubmit={submit} className="space-y-4">
           {rows.map((r, i) => (
@@ -406,7 +437,7 @@ function CriteriaTab({ queryClient }) {
                   aria-label="Weight"
                 />
                 {rows.length > 1 && (
-                  <button type="button" onClick={() => removeRow(i)} className="btn btn-ghost btn-sm text-rose-600" aria-label="Remove criterion">
+                  <button type="button" onClick={() => removeRow(i)} className="btn btn-ghost btn-sm text-error-text" aria-label="Remove criterion">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
@@ -419,7 +450,7 @@ function CriteriaTab({ queryClient }) {
           ))}
           <div className="flex items-center justify-between">
             <button type="button" onClick={addRow} className="btn btn-secondary btn-sm"><Plus className="w-3 h-3" /> Add Criterion</button>
-            <span className={`text-sm font-semibold ${Math.abs(total - 1) < 0.001 ? 'text-emerald-600' : 'text-theme-text0'}`}>
+            <span className={`text-sm font-semibold ${Math.abs(total - 1) < 0.001 ? 'text-success-text' : 'text-theme-text0'}`}>
               Total: {(total * 100).toFixed(0)}%
             </span>
           </div>
@@ -430,9 +461,11 @@ function CriteriaTab({ queryClient }) {
       </div>
 
       <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-theme-text mb-4">Active Criteria</h3>
+        <h2 className="text-lg font-bold text-theme-text mb-4">Active Criteria</h2>
         {isLoading ? (
-          <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+          <SkeletonRows count={3} />
+        ) : isError ? (
+          <ErrorState title="Couldn't load criteria" message="Evaluation criteria didn't load. Check your connection and try again." onRetry={() => refetch()} />
         ) : activeCriteria.length === 0 ? (
           <p className="text-sm text-theme-text0 italic">No active criteria configured.</p>
         ) : (
@@ -442,7 +475,7 @@ function CriteriaTab({ queryClient }) {
                 <div>
                   <h4 className="font-semibold text-theme-text">{c.criterionName}</h4>
                   {c.guidance && <p className="text-xs text-theme-text0 mt-0.5">{c.guidance}</p>}
-                  <p className="text-[10px] text-theme-text0 mt-1">v{c.version} · scale {c.scoreRangeMin}–{c.scoreRangeMax}</p>
+                  <p className="text-[11px] text-theme-text0 mt-1">v{c.version} · scale {c.scoreRangeMin}–{c.scoreRangeMax}</p>
                 </div>
                 <div className="text-lg font-bold text-theme-accent">{Math.round(c.weight * 100)}%</div>
               </div>
@@ -509,12 +542,12 @@ function AnnouncementsTab({ queryClient }) {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-theme-text">Announcements</h3>
+        <h2 className="text-lg font-bold text-theme-text">Announcements</h2>
         <button onClick={openCreate} className="btn btn-primary btn-sm"><Plus className="w-4 h-4" /> New Announcement</button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-20 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+        <SkeletonRows count={3} heightClass="h-20" />
       ) : items.length === 0 ? (
         <p className="text-sm text-theme-text0 italic">No announcements yet.</p>
       ) : (
@@ -525,16 +558,16 @@ function AnnouncementsTab({ queryClient }) {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h4 className="font-semibold text-theme-text">{a.title}</h4>
-                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${a.isActive ? 'bg-emerald-500/20 text-emerald-600' : 'bg-theme-border/50 text-theme-text0'}`}>
+                    <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded ${a.isActive ? 'bg-success/20 text-success-text' : 'bg-theme-border/50 text-theme-text0'}`}>
                       {a.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
                   <div className="text-xs text-theme-text/80 line-clamp-2"><RichText html={a.richTextBody} /></div>
-                  <p className="text-[10px] text-theme-text0 mt-1">Expires {new Date(a.expiryDate).toLocaleDateString('en-IN')}</p>
+                  <p className="text-[11px] text-theme-text0 mt-1">Expires {new Date(a.expiryDate).toLocaleDateString('en-IN')}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button onClick={() => openEdit(a)} className="btn btn-ghost btn-sm">Edit</button>
-                  <button onClick={() => deleteMutation.mutate(a._id)} className="btn btn-ghost btn-sm text-rose-600" aria-label={`Delete ${a.title}`}>
+                  <button onClick={() => deleteMutation.mutate(a._id)} className="btn btn-ghost btn-sm text-error-text" aria-label={`Delete ${a.title}`}>
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -545,20 +578,20 @@ function AnnouncementsTab({ queryClient }) {
       )}
 
       <Modal open={showForm} onClose={closeForm} title={editing ? 'Edit Announcement' : 'New Announcement'} size="lg">
-        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{error}</div>}
+        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-label block mb-2">Title <span className="text-rose-500">*</span></label>
-            <input className="input-base" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+            <label htmlFor="announcement-title" className="text-label block mb-2">Title <span className="text-error-text">*</span></label>
+            <input id="announcement-title" className="input-base" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
           </div>
           <div>
-            <label className="text-label block mb-2">Body <span className="text-rose-500">*</span></label>
-            <RichTextEditor value={form.richTextBody} onChange={(html) => setForm({ ...form, richTextBody: html })} placeholder="Announcement details…" />
+            <label className="text-label block mb-2">Body <span className="text-error-text">*</span></label>
+            <RichTextEditor value={form.richTextBody} onChange={(html) => setForm({ ...form, richTextBody: html })} ariaLabel="Announcement details" placeholder="Announcement details…" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-label block mb-2">Expiry Date <span className="text-rose-500">*</span></label>
-              <input type="date" className="input-base" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} required />
+              <label htmlFor="announcement-expiry" className="text-label block mb-2">Expiry Date <span className="text-error-text">*</span></label>
+              <input id="announcement-expiry" type="date" className="input-base" value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} required />
             </div>
             <div className="flex items-end">
               <label className="flex items-center gap-2 text-sm text-theme-text">
@@ -608,10 +641,10 @@ const toDateInput = (d) => {
 };
 
 const STATUS_BADGE = {
-  [EVENT_STATUS.ACTIVE]: 'bg-emerald-500/20 text-emerald-600',
-  [EVENT_STATUS.EXTENDED]: 'bg-blue-500/20 text-blue-600',
+  [EVENT_STATUS.ACTIVE]: 'bg-success/20 text-success-text',
+  [EVENT_STATUS.EXTENDED]: 'bg-info-light text-info-text',
   [EVENT_STATUS.CLOSED]: 'bg-theme-border/50 text-theme-text0',
-  [EVENT_STATUS.DRAFT]: 'bg-amber-500/20 text-amber-600',
+  [EVENT_STATUS.DRAFT]: 'bg-warning-light text-warning-text',
 };
 
 function EventsTab({ queryClient }) {
@@ -731,12 +764,12 @@ function EventsTab({ queryClient }) {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-theme-text">Ideathon Events</h3>
+        <h2 className="text-lg font-bold text-theme-text">Ideathon Events</h2>
         <button onClick={openCreate} className="btn btn-primary btn-sm"><Plus className="w-4 h-4" /> New Event</button>
       </div>
 
       {isLoading ? (
-        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+        <SkeletonRows count={3} heightClass="h-24" />
       ) : events.length === 0 ? (
         <p className="text-sm text-theme-text0 italic">No events yet. Create one to launch an Ideathon.</p>
       ) : (
@@ -752,14 +785,14 @@ function EventsTab({ queryClient }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 mb-1">
                       <h4 className="font-semibold text-theme-text">{ev.eventName}</h4>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${STATUS_BADGE[ev.status] || 'bg-theme-border/50 text-theme-text0'}`}>
+                      <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded ${STATUS_BADGE[ev.status] || 'bg-theme-border/50 text-theme-text0'}`}>
                         {ev.status}
                       </span>
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-theme-border/40 text-theme-text/80 flex items-center gap-1">
+                      <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded bg-theme-border/40 text-theme-text/80 flex items-center gap-1">
                         {ev.visibility === EVENT_VISIBILITY.RESTRICTED ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
                         {ev.visibility}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
+                      <span className="text-[11px] uppercase tracking-wide px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
                         {EVENT_LABEL(ev.eventType)}
                       </span>
                     </div>
@@ -794,7 +827,7 @@ function EventsTab({ queryClient }) {
 
                   <div className="flex flex-wrap gap-2 shrink-0">
                     {isDraft && (
-                      <button onClick={() => publishMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-emerald-600" title="Publish (visible to all active employees)">
+                      <button onClick={() => publishMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-success-text" title="Publish (visible to all active employees)">
                         <Send className="w-4 h-4" /> Publish
                       </button>
                     )}
@@ -803,7 +836,7 @@ function EventsTab({ queryClient }) {
                       <Clock className="w-4 h-4" /> Extend
                     </button>
                     {!isClosed && (
-                      <button onClick={() => closeMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-rose-600" title="Close event">
+                      <button onClick={() => closeMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-error-text" title="Close event">
                         <Ban className="w-4 h-4" /> Close
                       </button>
                     )}
@@ -817,62 +850,62 @@ function EventsTab({ queryClient }) {
 
       {/* ── Create / Edit modal (FR-IE-01) ── */}
       <Modal open={showForm} onClose={closeForm} title={editing ? 'Edit Event' : 'New Ideathon Event'} size="lg">
-        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{error}</div>}
+        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm">{error}</div>}
         <form onSubmit={submit} className="space-y-4">
           <div>
-            <label className="text-label block mb-2">Event Name <span className="text-rose-500">*</span></label>
-            <input className="input-base" value={form.eventName} onChange={(e) => setForm({ ...form, eventName: e.target.value })} required />
+            <label htmlFor="event-name" className="text-label block mb-2">Event Name <span className="text-error-text">*</span></label>
+            <input id="event-name" className="input-base" value={form.eventName} onChange={(e) => setForm({ ...form, eventName: e.target.value })} required />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-label block mb-2">Event Type <span className="text-rose-500">*</span></label>
-              <select className="input-base" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
+              <label htmlFor="event-type" className="text-label block mb-2">Event Type <span className="text-error-text">*</span></label>
+              <select id="event-type" className="input-base" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
                 {ALL_EVENT_TYPES.map((t) => <option key={t} value={t}>{EVENT_LABEL(t)}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-label block mb-2">Theme</label>
-              <input className="input-base" value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value })} />
+              <label htmlFor="event-theme" className="text-label block mb-2">Theme</label>
+              <input id="event-theme" className="input-base" value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value })} />
             </div>
           </div>
           <div>
-            <label className="text-label block mb-2">Description</label>
-            <textarea className="input-base min-h-[80px]" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <label htmlFor="event-description" className="text-label block mb-2">Description</label>
+            <textarea id="event-description" className="input-base min-h-[80px]" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-label block mb-2">Start Date <span className="text-rose-500">*</span></label>
-              <input type="date" className="input-base" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} required />
+              <label htmlFor="event-start-date" className="text-label block mb-2">Start Date <span className="text-error-text">*</span></label>
+              <input id="event-start-date" type="date" className="input-base" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} required />
             </div>
             <div>
-              <label className="text-label block mb-2">End Date <span className="text-rose-500">*</span></label>
-              <input type="date" className="input-base" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} required />
+              <label htmlFor="event-end-date" className="text-label block mb-2">End Date <span className="text-error-text">*</span></label>
+              <input id="event-end-date" type="date" className="input-base" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} required />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-label block mb-2">Initiative</label>
-              <input className="input-base" value={form.initiative} onChange={(e) => setForm({ ...form, initiative: e.target.value })} placeholder="e.g. Digital Transformation" />
+              <label htmlFor="event-initiative" className="text-label block mb-2">Initiative</label>
+              <input id="event-initiative" className="input-base" value={form.initiative} onChange={(e) => setForm({ ...form, initiative: e.target.value })} placeholder="e.g. Digital Transformation" />
             </div>
             <div>
-              <label className="text-label block mb-2">Idea Category</label>
-              <input className="input-base" value={form.ideaCategory} onChange={(e) => setForm({ ...form, ideaCategory: e.target.value })} placeholder="e.g. Process Improvement" />
+              <label htmlFor="event-idea-category" className="text-label block mb-2">Idea Category</label>
+              <input id="event-idea-category" className="input-base" value={form.ideaCategory} onChange={(e) => setForm({ ...form, ideaCategory: e.target.value })} placeholder="e.g. Process Improvement" />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-label block mb-2">Max Participants</label>
-              <input type="number" min="1" className="input-base" value={form.maxParticipants} onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })} placeholder="Unlimited" />
+              <label htmlFor="event-max-participants" className="text-label block mb-2">Max Participants</label>
+              <input id="event-max-participants" type="number" min="1" className="input-base" value={form.maxParticipants} onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })} placeholder="Unlimited" />
             </div>
             <div>
-              <label className="text-label block mb-2">Visibility</label>
-              <select className="input-base" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}>
+              <label htmlFor="event-visibility" className="text-label block mb-2">Visibility</label>
+              <select id="event-visibility" className="input-base" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}>
                 {ALL_EVENT_VISIBILITIES.map((v) => <option key={v} value={v}>{EVENT_LABEL(v)}</option>)}
               </select>
             </div>
             <div>
-              <label className="text-label block mb-2">Status</label>
-              <select className="input-base" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+              <label htmlFor="event-status" className="text-label block mb-2">Status</label>
+              <select id="event-status" className="input-base" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                 {ALL_EVENT_STATUSES.map((s) => <option key={s} value={s}>{EVENT_LABEL(s)}</option>)}
               </select>
             </div>
@@ -901,20 +934,20 @@ function EventsTab({ queryClient }) {
           )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-label block mb-2">Min Qualifying Score</label>
-              <input type="number" min="0" max="10" step="0.5" className="input-base" value={form.minQualifyingScore} onChange={(e) => setForm({ ...form, minQualifyingScore: e.target.value })} />
+              <label htmlFor="event-min-score" className="text-label block mb-2">Min Qualifying Score</label>
+              <input id="event-min-score" type="number" min="0" max="10" step="0.5" className="input-base" value={form.minQualifyingScore} onChange={(e) => setForm({ ...form, minQualifyingScore: e.target.value })} />
             </div>
             <div>
-              <label className="text-label block mb-2">Quorum Type</label>
-              <select className="input-base" value={form.quorumType} onChange={(e) => setForm({ ...form, quorumType: e.target.value })}>
+              <label htmlFor="event-quorum-type" className="text-label block mb-2">Quorum Type</label>
+              <select id="event-quorum-type" className="input-base" value={form.quorumType} onChange={(e) => setForm({ ...form, quorumType: e.target.value })}>
                 <option value="majority">Majority</option>
                 <option value="fixed_count">Fixed Count</option>
               </select>
             </div>
             {form.quorumType === 'fixed_count' && (
               <div>
-                <label className="text-label block mb-2">Quorum Value</label>
-                <input type="number" min="1" className="input-base" value={form.quorumValue} onChange={(e) => setForm({ ...form, quorumValue: e.target.value })} />
+                <label htmlFor="event-quorum-value" className="text-label block mb-2">Quorum Value</label>
+                <input id="event-quorum-value" type="number" min="1" className="input-base" value={form.quorumValue} onChange={(e) => setForm({ ...form, quorumValue: e.target.value })} />
               </div>
             )}
           </div>
@@ -929,15 +962,15 @@ function EventsTab({ queryClient }) {
 
       {/* ── Extend deadline modal (FR-IE-07) ── */}
       <Modal open={!!extendFor} onClose={closeExtend} title={`Extend Deadline — ${extendFor?.eventName || ''}`} size="md">
-        {extendError && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{extendError}</div>}
+        {extendError && <div role="alert" className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm">{extendError}</div>}
         <form onSubmit={submitExtend} className="space-y-4">
           <div>
-            <label className="text-label block mb-2">New End Date <span className="text-rose-500">*</span></label>
-            <input type="date" className="input-base" value={extendForm.newEndDate} onChange={(e) => setExtendForm({ ...extendForm, newEndDate: e.target.value })} required />
+            <label htmlFor="extend-new-end-date" className="text-label block mb-2">New End Date <span className="text-error-text">*</span></label>
+            <input id="extend-new-end-date" type="date" className="input-base" value={extendForm.newEndDate} onChange={(e) => setExtendForm({ ...extendForm, newEndDate: e.target.value })} required />
           </div>
           <div>
-            <label className="text-label block mb-2">Justification <span className="text-rose-500">*</span> <span className="text-theme-text0 font-normal">(min 20 chars)</span></label>
-            <textarea className="input-base min-h-[90px]" value={extendForm.justification} onChange={(e) => setExtendForm({ ...extendForm, justification: e.target.value })} placeholder="Why is the deadline being extended?" required />
+            <label htmlFor="extend-justification" className="text-label block mb-2">Justification <span className="text-error-text">*</span> <span className="text-theme-text0 font-normal">(min 20 chars)</span></label>
+            <textarea id="extend-justification" className="input-base min-h-[90px]" value={extendForm.justification} onChange={(e) => setExtendForm({ ...extendForm, justification: e.target.value })} placeholder="Why is the deadline being extended?" required />
           </div>
           <p className="text-xs text-theme-text0">All registered participants will be notified of the new deadline.</p>
           <div className="flex justify-end gap-3 pt-4 border-t border-theme-border/50">
@@ -965,15 +998,19 @@ function AuditTab() {
   return (
     <div className="glass rounded-2xl p-6">
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
-        <h3 className="text-lg font-bold text-theme-text">Audit Trail</h3>
+        <h2 className="text-lg font-bold text-theme-text">Audit Trail</h2>
         <div className="flex gap-2">
+          <label htmlFor="audit-filter-action" className="sr-only">Filter audit log by action</label>
           <input
+            id="audit-filter-action"
             placeholder="Action (e.g. update)"
             className="input-base text-sm"
             value={filters.action}
             onChange={(e) => setFilters({ ...filters, action: e.target.value })}
           />
+          <label htmlFor="audit-filter-entity" className="sr-only">Filter audit log by entity type</label>
           <input
+            id="audit-filter-entity"
             placeholder="Entity type (e.g. Idea)"
             className="input-base text-sm"
             value={filters.entityType}
@@ -983,29 +1020,30 @@ function AuditTab() {
       </div>
 
       {isLoading ? (
-        <div className="space-y-2">{[...Array(8)].map((_, i) => <div key={i} className="h-10 bg-theme-surface rounded animate-pulse" />)}</div>
+        <SkeletonRows count={8} heightClass="h-10" />
       ) : items.length === 0 ? (
         <p className="text-sm text-theme-text0 italic">No audit entries match.</p>
       ) : (
         <div className="table-responsive">
-          <table className="w-full text-left text-sm text-theme-text/80">
-            <thead className="bg-theme-surface/50 text-xs font-semibold text-theme-text/80 uppercase tracking-wider">
+          <table className="table-base">
+            <caption className="sr-only">Audit trail entries</caption>
+            <thead>
               <tr>
-                <th className="p-3 rounded-l-xl">When</th>
-                <th className="p-3">Actor</th>
-                <th className="p-3">Action</th>
-                <th className="p-3">Entity</th>
-                <th className="p-3 rounded-r-xl">Entity ID</th>
+                <th scope="col">When</th>
+                <th scope="col">Actor</th>
+                <th scope="col">Action</th>
+                <th scope="col">Entity</th>
+                <th scope="col">Entity ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-theme-border/50">
+            <tbody>
               {items.map((log) => (
-                <tr key={log._id} className="hover:bg-theme-surface/30 transition-colors">
-                  <td className="p-3 whitespace-nowrap text-xs">{new Date(log.timestamp).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</td>
-                  <td className="p-3">{log.actorId?.name || 'System'}</td>
-                  <td className="p-3"><span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent uppercase">{log.action}</span></td>
-                  <td className="p-3">{log.entityType}</td>
-                  <td className="p-3 text-xs font-mono truncate max-w-[160px]">{log.entityId}</td>
+                <tr key={log._id}>
+                  <td className="whitespace-nowrap text-xs">{new Date(log.timestamp).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                  <td>{log.actorId?.name || 'System'}</td>
+                  <td><span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent uppercase">{log.action}</span></td>
+                  <td>{log.entityType}</td>
+                  <td className="text-xs font-mono truncate max-w-[160px]">{log.entityId}</td>
                 </tr>
               ))}
             </tbody>

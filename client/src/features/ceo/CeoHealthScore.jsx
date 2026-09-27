@@ -52,7 +52,7 @@ export default function CeoHealthScore({ health, definitions = {}, loading }) {
             <span className="text-sm text-theme-text0 mb-1">/ 100</span>
             <span
               className="ml-auto text-[11px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md"
-              style={{ color: band.color, background: `${band.color}15` }}
+              style={{ color: band.color, background: band.tint }}
             >
               {band.label}
             </span>
@@ -96,7 +96,7 @@ export default function CeoHealthScore({ health, definitions = {}, loading }) {
                     />
                   </div>
                   {!hasValue && (
-                    <p className="text-[10px] text-theme-text0 mt-0.5">No data for this dimension yet</p>
+                    <p className="text-[11px] text-theme-text0 mt-0.5">No data for this dimension yet</p>
                   )}
                 </div>
               )

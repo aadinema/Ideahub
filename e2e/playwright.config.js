@@ -23,4 +23,22 @@ module.exports = defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
+  // Playwright owns both processes so CI does not have to background them.
+  // Set PW_SKIP_WEBSERVER=1 to run against servers you started yourself.
+  webServer: process.env.PW_SKIP_WEBSERVER
+    ? undefined
+    : [
+        {
+          command: 'cd ../server && npm start',
+          url: 'http://localhost:5000/health',
+          reuseExistingServer: !process.env.CI,
+          timeout: 60000,
+        },
+        {
+          command: 'cd ../client && npm run dev',
+          url: 'http://localhost:5173',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120000,
+        },
+      ],
 });

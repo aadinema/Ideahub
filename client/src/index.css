@@ -21,16 +21,65 @@
 
   --text-primary: #0F172A;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  /* 4.76:1 on --surface (WCAG AA). Was #94A3B8 at 2.56:1 — failed AA. */
+  --text-muted: #64748B;
+
+  /* Status *text* variants. The vivid --success/--warning/--error above fail AA
+     as text (2.54 / 2.15 / 3.76) and are kept only for fills, borders and icons. */
+  --success-text: #047857;
+  --warning-text: #B45309;
+  --error-text: #B91C1C;
+  --info-text: #1D4ED8;
+  /* AA-safe text variants for the secondary status palette (badges, labels). */
+  --purple-text: #6D28D9;
+  --pink-text: #BE185D;
+  --orange-text: #C2410C;
+  --emerald-text: #047857;
 
   --success: #10B981;
+  --success-hover: #059669;
   --success-light: rgba(16, 185, 129, 0.1);
   --warning: #F59E0B;
+  --warning-hover: #D97706;
   --warning-light: rgba(245, 158, 11, 0.1);
   --error: #EF4444;
+  --error-hover: #DC2626;
   --error-light: rgba(239, 68, 68, 0.1);
   --info: #3B82F6;
+  --info-hover: #2563EB;
   --info-light: rgba(59, 130, 246, 0.1);
+  --scrim: rgba(15, 23, 42, 0.45);
+
+  /* Status colors */
+  --rose: #EF4444;
+  --rose-hover: #DC2626;
+  --rose-light: rgba(239, 68, 68, 0.1);
+  --emerald: #10B981;
+  --emerald-hover: #059669;
+  --emerald-light: rgba(16, 185, 129, 0.1);
+  --amber: #F59E0B;
+  --amber-hover: #D97706;
+  --amber-light: rgba(245, 158, 11, 0.1);
+  --purple: #8B5CF6;
+  --purple-hover: #7C3AED;
+  --purple-light: rgba(139, 92, 246, 0.1);
+  --pink: #EC4899;
+  --pink-hover: #DB2777;
+  --pink-light: rgba(236, 72, 153, 0.1);
+  --orange: #F97316;
+  --orange-hover: #EA580C;
+  --orange-light: rgba(249, 115, 22, 0.1);
+
+  /* Role accent colors (sidebar avatar, role pills). Chosen dark enough that
+     white pill text passes AA in BOTH themes, so no dark-mode override needed. */
+  --role-employee: #1D4ED8;
+  --role-supervisor: #B45309;
+  --role-evaluator: #047857;
+  --role-evaluator-2: #065F46;
+  --role-committee: #6D28D9;
+  --role-owner: #BE185D;
+  --role-ceo: #4F46E5;
+  --role-admin: #B91C1C;
 
   /* Sidebar */
   --sidebar-bg: #FFFFFF;
@@ -50,9 +99,20 @@
   /* Table */
   --table-row-hover: rgba(248, 250, 252, 0.8);
 
-  /* Typography */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Typography — platform UI stack. No external font: the server CSP allows
+     font-src 'self' only, so a Google Fonts link is silently blocked in prod. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+
+  /* Radius scale */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Elevation scale */
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+  --shadow-pop: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+  --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
 
   /* Animations */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -78,6 +138,15 @@
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
 
+  --success-text: #6EE7B7;
+  --warning-text: #FCD34D;
+  --error-text: #FCA5A5;
+  --info-text: #93C5FD;
+  --purple-text: #C4B5FD;
+  --pink-text: #F9A8D4;
+  --orange-text: #FDBA74;
+  --emerald-text: #6EE7B7;
+
   --success: #34D399;
   --success-light: rgba(52, 211, 153, 0.12);
   --warning: #FBBF24;
@@ -86,6 +155,7 @@
   --error-light: rgba(248, 113, 113, 0.12);
   --info: #60A5FA;
   --info-light: rgba(96, 165, 250, 0.12);
+  --scrim: rgba(2, 6, 23, 0.6);
 
   --sidebar-bg: #131825;
   --sidebar-active-bg: rgba(129, 140, 248, 0.1);
@@ -100,6 +170,26 @@
   --input-disabled-bg: #131825;
 
   --table-row-hover: rgba(26, 32, 53, 0.6);
+
+  /* Secondary status colors — lightened for dark backgrounds so they keep contrast */
+  --purple: #A78BFA;
+  --purple-hover: #C4B5FD;
+  --purple-light: rgba(167, 139, 250, 0.14);
+  --pink: #F472B6;
+  --pink-hover: #F9A8D4;
+  --pink-light: rgba(244, 114, 182, 0.14);
+  --orange: #FB923C;
+  --orange-hover: #FDBA74;
+  --orange-light: rgba(251, 146, 60, 0.14);
+  --emerald: #34D399;
+  --emerald-hover: #6EE7B7;
+  --emerald-light: rgba(52, 211, 153, 0.14);
+  --amber: #FBBF24;
+  --amber-hover: #FCD34D;
+  --amber-light: rgba(251, 191, 36, 0.14);
+  --rose: #F87171;
+  --rose-hover: #FCA5A5;
+  --rose-light: rgba(248, 113, 113, 0.14);
 }
 
 /* ── Tailwind Theme Integration ── */
@@ -110,11 +200,61 @@
   --color-theme-border: var(--border);
   --color-theme-text: var(--text-primary);
   --color-theme-text0: var(--text-muted);
+  --color-theme-text2: var(--text-secondary);
   --color-theme-accent: var(--primary);
   --color-theme-accent-hover: var(--primary-hover);
 
+  /* Status colors — theme-aware, swap automatically with light/dark */
+  --color-success: var(--success);
+  --color-success-hover: var(--success-hover);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-hover: var(--warning-hover);
+  --color-warning-light: var(--warning-light);
+  --color-error: var(--error);
+  --color-error-hover: var(--error-hover);
+  --color-error-light: var(--error-light);
+  --color-info: var(--info);
+  --color-info-hover: var(--info-hover);
+  --color-info-light: var(--info-light);
+  --color-success-text: var(--success-text);
+  --color-warning-text: var(--warning-text);
+  --color-error-text: var(--error-text);
+  --color-info-text: var(--info-text);
+  --color-purple-text: var(--purple-text);
+  --color-pink-text: var(--pink-text);
+  --color-orange-text: var(--orange-text);
+  --color-emerald-text: var(--emerald-text);
+  --color-scrim: var(--scrim);
+
+  /* Workflow/secondary status colors */
+  --color-purple: var(--purple);
+  --color-purple-hover: var(--purple-hover);
+  --color-purple-light: var(--purple-light);
+  --color-pink: var(--pink);
+  --color-pink-hover: var(--pink-hover);
+  --color-pink-light: var(--pink-light);
+  --color-orange: var(--orange);
+  --color-orange-hover: var(--orange-hover);
+  --color-orange-light: var(--orange-light);
+  --color-emerald: var(--emerald);
+  --color-emerald-hover: var(--emerald-hover);
+  --color-emerald-light: var(--emerald-light);
+  --color-amber: var(--amber);
+  --color-amber-hover: var(--amber-hover);
+  --color-amber-light: var(--amber-light);
+  --color-rose: var(--rose);
+  --color-rose-hover: var(--rose-hover);
+  --color-rose-light: var(--rose-light);
+
   --font-sans: var(--font-sans);
   --font-display: var(--font-display);
+
+  /* Radius + elevation exposed to utilities: rounded-card, shadow-card, … */
+  --radius-card: var(--radius-lg);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+  --shadow-modal: var(--shadow-modal);
 }
 
 /* ── Base ── */
@@ -140,8 +280,10 @@
 }
 
 html {
-  scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
 }
 
 body {
@@ -224,27 +366,26 @@ body {
 .glow-brand  { box-shadow: 0 0 20px var(--primary-ring); }
 .glow-accent { box-shadow: 0 0 20px var(--primary-ring); }
 
-/* ── Status badge colors ── */
-.badge-draft           { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
-.badge-submitted       { background: var(--info-light); color: var(--info); border: 1px solid rgba(59, 130, 246, 0.2); }
-.badge-supervisor      { background: var(--warning-light); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
-.badge-evaluation      { background: rgba(139, 92, 246, 0.1); color: #8B5CF6; border: 1px solid rgba(139, 92, 246, 0.2); }
-.badge-shortlisted     { background: var(--success-light); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
-.badge-committee       { background: rgba(236, 72, 153, 0.1); color: #EC4899; border: 1px solid rgba(236, 72, 153, 0.2); }
-.badge-approved        { background: var(--success-light); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.25); }
-.badge-published       { background: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-ring); }
-.badge-implementation  { background: rgba(249, 115, 22, 0.1); color: #F97316; border: 1px solid rgba(249, 115, 22, 0.2); }
-.badge-rejected        { background: var(--error-light); color: var(--error); border: 1px solid rgba(239, 68, 68, 0.2); }
-.badge-closed          { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
-
-[data-theme="dark"] .badge-evaluation { color: #A78BFA; }
-[data-theme="dark"] .badge-committee { color: #F472B6; }
-[data-theme="dark"] .badge-implementation { color: #FB923C; }
+/* ── Status badge colors ──
+   Text uses the AA-safe `-text` variants (vivid tokens are ~2–3.8:1 on their own
+   light fills and fail AA at badge sizes). Theme-aware: the `-text` vars swap
+   automatically, so no per-theme overrides are needed. */
+.badge-draft           { background: var(--rose-light);    color: var(--text-secondary); border-color: rgba(239, 68, 68, 0.2); }
+.badge-submitted       { background: var(--info-light);    color: var(--info-text);      border-color: rgba(59, 130, 246, 0.2); }
+.badge-supervisor      { background: var(--warning-light); color: var(--warning-text);   border-color: rgba(245, 158, 11, 0.2); }
+.badge-evaluation      { background: var(--purple-light);  color: var(--purple-text);    border-color: rgba(139, 92, 246, 0.2); }
+.badge-shortlisted     { background: var(--success-light); color: var(--success-text);   border-color: rgba(16, 185, 129, 0.2); }
+.badge-committee       { background: var(--pink-light);    color: var(--pink-text);      border-color: rgba(236, 72, 153, 0.2); }
+.badge-approved        { background: var(--success-light); color: var(--success-text);   border-color: rgba(16, 185, 129, 0.25); }
+.badge-published       { background: var(--primary-light); color: var(--primary);        border-color: var(--primary-ring); }
+.badge-implementation  { background: var(--orange-light);  color: var(--orange-text);    border-color: rgba(249, 115, 22, 0.2); }
+.badge-rejected        { background: var(--error-light);   color: var(--error-text);     border-color: rgba(239, 68, 68, 0.2); }
+.badge-closed          { background: var(--rose-light);    color: var(--text-secondary); border-color: rgba(148, 163, 184, 0.2); }
 
 /* ── SLA countdown colors (FR-03-04) ── */
-.sla-ok    { color: var(--success); }
-.sla-amber { color: var(--warning); animation: pulse-amber 2s ease-in-out infinite; }
-.sla-red   { color: var(--error); animation: pulse-red 1.5s ease-in-out infinite; }
+.sla-ok    { color: var(--success-text); }
+.sla-amber { color: var(--warning-text); animation: pulse-amber 2s ease-in-out infinite; }
+.sla-red   { color: var(--error-text); animation: pulse-red 1.5s ease-in-out infinite; }
 
 @keyframes pulse-amber {
   0%, 100% { opacity: 1; }
@@ -268,6 +409,19 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter { animation: fade-in-up 0.4s ease-out forwards; }
+
+/* ── Reduced motion ──
+   One global rule so animations/transitions added later are covered. Decorative
+   motion (entrance, KPI count-up, SLA pulse) is disabled outright; transitions
+   collapse to near-zero so state changes still apply instantly. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .page-enter, .kpi-value, .sla-amber, .sla-red { animation: none !important; }
+}
 
 /* ── Form inputs ── */
 .input-base {
@@ -324,13 +478,15 @@ body {
   border-color: var(--border);
 }
 .btn-secondary:hover:not(:disabled) { background: var(--background); border-color: var(--text-muted); }
+.btn-secondary:active:not(:disabled) { background: var(--primary-light); }
 
 .btn-danger {
   background: var(--error-light);
-  color: var(--error);
+  color: var(--error-text);
   border-color: rgba(239, 68, 68, 0.2);
 }
 .btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.15); }
+.btn-danger:active:not(:disabled) { background: rgba(239, 68, 68, 0.2); }
 
 .btn-ghost {
   background: transparent;
@@ -338,6 +494,7 @@ body {
   border-color: transparent;
 }
 .btn-ghost:hover:not(:disabled) { background: var(--primary-light); color: var(--text-primary); }
+.btn-ghost:active:not(:disabled) { background: var(--primary-light); }
 
 .btn-sm  { padding: 6px 14px; font-size: 0.8125rem; min-height: 36px; }
 .btn-lg  { padding: 14px 28px; font-size: 1.0625rem; }
@@ -366,7 +523,14 @@ body {
   text-decoration: none;
 }
 .sidebar-item:hover { background: var(--primary-light); color: var(--text-primary); }
-.sidebar-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-text); border: 1px solid var(--sidebar-active-border); font-weight: 600; }
+.sidebar-item.active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+  /* inset ring instead of a real border — an actual border would shift the
+     content 1px horizontally when the item becomes active. */
+  box-shadow: inset 0 0 0 1px var(--sidebar-active-border);
+  font-weight: 600;
+}
 
 /* ── Rich text editor overrides (react-quill) ── */
 .ql-toolbar { background: var(--surface) !important; border-color: var(--border) !important; border-radius: 8px 8px 0 0 !important; }
@@ -402,6 +566,8 @@ body {
 .prose-idea pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 0.875rem; margin: 0.75em 0; }
 .prose-idea code { background: var(--primary-light); border-radius: 4px; padding: 0.1em 0.35em; font-size: 0.875em; }
 .prose-idea pre code { background: transparent; padding: 0; }
+/* Compact variant for truncated card previews (unlayered, so it beats .prose-idea). */
+.prose-idea-sm { font-size: 0.875rem; line-height: 1.6; }
 
 /* ── Table ── */
 .table-base { width: 100%; border-collapse: collapse; }
@@ -434,16 +600,126 @@ body {
 }
 
 /* ── Alert/notice styles ── */
-.alert-info    { background: var(--info-light); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info); }
-.alert-success { background: var(--success-light); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success); }
-.alert-warning { background: var(--warning-light); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--warning); }
-.alert-error   { background: var(--error-light); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--error); }
+.alert-info    { background: var(--info-light); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--info-text); }
+.alert-success { background: var(--success-light); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success-text); }
+.alert-warning { background: var(--warning-light); border: 1px solid rgba(245, 158, 11, 0.2); color: var(--warning-text); }
+.alert-error   { background: var(--error-light); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--error-text); }
+
+/* ── State blocks: error / empty / loading ──
+   Shared by ErrorState / EmptyState / skeletons. Kept as plain classes (not
+   components) so a page can compose its own markup without a render wrapper. */
+.state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: 48px 24px;
+  gap: 4px;
+}
+.state-icon {
+  display: flex; align-items: center; justify-content: center;
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.state-title {
+  font-size: 1rem; font-weight: 600;
+  color: var(--text-primary);
+}
+.state-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  max-width: 42ch;
+}
+.state-actions { margin-top: 16px; display: flex; gap: 8px; }
+
+.state-error .state-icon { background: var(--error-light); color: var(--error-text); }
+.state-empty .state-icon { background: var(--primary-light); color: var(--primary); }
+.state-empty .state-title { color: var(--text-secondary); }
+
+/* ── Skeletons ── mirror real content so layout does not jump on load */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--background) 25%,
+    var(--border) 37%,
+    var(--background) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-sweep 1.4s ease infinite;
+  border-radius: 6px;
+}
+@keyframes skeleton-sweep {
+  0%   { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+.skeleton-text { height: 12px; }
+.skeleton-title { height: 20px; }
+.skeleton-circle { border-radius: 50%; }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}
+
+/* ── Range inputs ──
+   `accent-color` + `appearance-none` renders inconsistently (the thumb can
+   vanish). This gives a themed track and a reliably visible thumb everywhere. */
+.range {
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--border);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+}
+.range::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.3);
+}
+.range:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 /* ── Responsive utilities ── */
 @media (max-width: 640px) {
   .text-display { font-size: 1.5rem; }
   .btn { padding: 8px 16px; font-size: 0.875rem; }
   .btn-lg { padding: 10px 20px; font-size: 0.9375rem; }
+}
+
+/* ── Print ──
+   Reports and department targets are export targets, so the printed page should
+   drop the app chrome and keep the content. Colors are forced to their light
+   values because print backgrounds are disabled by default in most browsers. */
+@media print {
+  aside,
+  header,
+  nav,
+  [class*="fixed"] {
+    display: none !important;
+  }
+  body, .bg-theme-bg, .bg-theme-surface, .glass, .bg-theme-surface\/50 {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+  }
+  main { padding: 0 !important; overflow: visible !important; }
+  .table-responsive { overflow: visible !important; }
+  table { width: 100% !important; }
+  thead { display: table-header-group; }   /* repeat headers across pages */
+  tr, .glass, .rounded-xl, .rounded-2xl {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+  a[href]::after { content: ""; }         /* don't print raw URLs after links */
 }
 
 /* ── Headless UI Transition dark-mode support ── */

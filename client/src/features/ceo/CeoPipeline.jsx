@@ -32,17 +32,17 @@ export default function CeoPipeline({ pipeline, definitions = {}, loading, onDri
           {bottlenecks.length > 0 && (
             <div className="space-y-2.5 mb-5" role="alert" aria-label="Pipeline bottlenecks">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-theme-text0 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" />
+                <AlertTriangle className="w-3.5 h-3.5 text-warning" aria-hidden="true" />
                 Bottlenecks — action required
               </p>
               {bottlenecks.map((b) => {
                 const severity = b.breachedCount > 0 ? 'error' : 'warning'
-                const color = severity === 'error' ? 'var(--error)' : 'var(--warning)'
+                const color = severity === 'error' ? 'var(--error-text)' : 'var(--warning-text)'
                 return (
                   <div
                     key={b.key}
                     className="rounded-xl border p-3.5 flex flex-wrap items-center gap-x-4 gap-y-1.5"
-                    style={{ borderColor: `${color}40`, background: `${color}0A` }}
+                    style={{ borderColor: `color-mix(in srgb, ${color} 40%, transparent)`, background: `color-mix(in srgb, ${color} 6%, transparent)` }}
                   >
                     <span className="text-sm font-semibold text-theme-text flex items-center gap-1.5">
                       <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color }} aria-hidden="true" />
@@ -95,16 +95,16 @@ export default function CeoPipeline({ pipeline, definitions = {}, loading, onDri
                     })
                   }
                   disabled={stage.waitingNow === 0}
-                  className="flex-1 min-w-0 rounded-xl border border-theme-border/60 p-3 text-left transition-all
+                  className="flex-1 min-w-0 rounded-xl border border-theme-border/60 p-3 text-left transition-all duration-200
                              enabled:hover:border-theme-accent/50 enabled:hover:bg-theme-surface/50
                              enabled:cursor-pointer disabled:opacity-70 focus-visible:outline-2 focus-visible:outline-[var(--primary)]"
                   aria-label={`${stage.label}: ${stage.everReached} ideas ever reached, ${stage.waitingNow} waiting now. Show waiting ideas.`}
                 >
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-theme-text0 truncate">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-theme-text0 truncate">
                     {stage.label}
                   </p>
                   <p className="text-xl font-bold text-theme-text mt-1 kpi-value">{stage.everReached}</p>
-                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1.5 text-[10px] text-theme-text0">
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-1.5 text-[11px] text-theme-text0">
                     {stage.conversionPct !== null && (
                       <span title={definitions.conversionPct}>{formatPct(stage.conversionPct)} conv</span>
                     )}
@@ -114,7 +114,7 @@ export default function CeoPipeline({ pipeline, definitions = {}, loading, onDri
                     </span>
                   </div>
                   {stage.recentMovements7d > 0 && (
-                    <p className="text-[10px] text-theme-accent mt-1 font-medium">
+                    <p className="text-[11px] text-theme-accent mt-1 font-medium">
                       +{stage.recentMovements7d} in last 7 days
                     </p>
                   )}

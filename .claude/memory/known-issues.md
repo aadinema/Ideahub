@@ -11,44 +11,53 @@ Secondary/older: `audit.md` (2026-09-05, stale in places), `ASSUMPTIONS.md`.
 ## Testing & CI
 
 ### KI-001 — CI pipeline exists but is non-functional / non-gating
-**Status:** OPEN
-**Date:** 2026-09-27 (verified against report.md Phase 3 checklist)
-`ci.yml` exists, but verification against report.md's Phase 3 requirements found it
-would not deliver a real signal. Evidence:
+**Status:** FIXED (2026-09-27)
+**Date:** 2026-09-27 (originally verified against report.md Phase 3 checklist; repaired same day)
+`ci.yml` was rewritten to a single gating job. Defects closed (see CHANGELOG 2026-09-27
+"Phase 3" entry for the full before/after table):
+- Node `18` → `22.x` (Vite 8.2.1 needs ^20.19 || >=22.12).
+- Removed root `npm ci` (no root lockfile); install only `client`/`server`/`e2e`.
+- Removed all `|| echo` / `--if-present` / `continue-on-error` escape hatches on gating
+  steps. **Decision:** gitleaks + build + client/server tests + E2E all GATE; `npm audit`
+  stays `continue-on-error` (informational only, by user decision); CodeQL in `security-scan`.
+- Playwright now owns both servers via `webServer[]` (server `:5000/health` + client `:5173`);
+  CI's manual background-server step removed. Escape hatch `PW_SKIP_WEBSERVER=1`.
+- Added `npx playwright install --with-deps chromium`; `security-scan` given
+  `security-events: write` for CodeQL SARIF upload.
 
-**Checks report.md Phase 3 asked for vs. reality:**
-| Requirement | In ci.yml? | Actually works? |
-|---|---|---|
-| install | `npm ci` (root, client, server, e2e) | **NO** — no `package-lock.json` tracked anywhere (all gitignored; root has none on disk) → `npm ci` cannot succeed |
-| client lint | step present | **NO** — client has no `lint` script; step is `--if-present \|\| echo` → silent skip |
-| client build | `npm run build` | **NO** — CI sets `node-version: '18'`; Vite 8.2.1 requires `^20.19.0 \|\| >=22.12.0` → build fails |
-| client unit tests | step present | **NO** — no `test` script (see KI-003); `--if-present` → skipped |
-| server unit/API tests | `npm run test` | runs, but `\|\| echo "Tests not ready yet"` **masks failures** → non-gating |
-| Playwright smoke | `cd e2e && npm run test` | **NO** — no `webServer` in `playwright.config.js` and CI never starts the client (only the backend) → nothing serves `:5173`; also `\|\| echo` masks failures |
-| secret scanning | gitleaks action | present but `continue-on-error: true` → **non-gating** |
-| dependency audit | `npm audit … \|\| true` + OWASP (continue-on-error) | present but **non-gating** |
+Was: install failed at root `npm ci`; build failed on Node 18; tests/e2e/audit/gitleaks all
+non-gating. Now: real signal, and the first run may be red (E2E timing / audit noise /
+gitleaks on existing history) — that is the intended signal, not a regression.
 
-**Stale report claim:** report.md said `e2e/package.json` lacks a clear test script —
-**false**: it has `test`, `test:smoke`, and per-suite scripts. (CI just doesn't use `test:smoke`.)
-
-**Consequence:** CI currently fails at the install step and is non-gating thereafter, so
-it provides no protection. Fixing it requires: commit lockfiles (or change `npm ci` → `npm
-install`), bump CI Node to ≥20.19 (or 22.12), add client/server `lint` scripts or drop the
-step, wire client tests (KI-003), add Playwright `webServer` (or start Vite in CI), and
-remove the `continue-on-error` / `|| echo` escapes for the checks meant to gate.
-Not yet fixed — analysis only (see CHANGELOG 2026-09-27).
-
-### KI-003 — Client unit tests exist but are not wired to run
-**Status:** OPEN
+### KI-003 — Client unit tests wired and passing
+**Status:** FIXED (verified 2026-09-27)
 **Date:** 2026-09-27
-`client/src/__tests__/auth.test.jsx` exists (vitest + `@testing-library/react`) and
-covers protected routes, token-storage non-persistence, mutation error states,
-expired-token recovery, form validation, and accessibility. **But** `client/package.json`
-has no `test` script and there is no vitest config, so these tests never execute.
-CI's "Client unit tests" step runs `npm run test --if-present`, silently skipping them.
-Framing: OPEN and arguably **worse** than "no tests" — a test file that exists but
-never runs creates false confidence. Fix = add a `test` script + vitest config
-(Phase 3). report.md's "no client unit tests found" is stale.
+Was: `client/src/__tests__/auth.test.jsx` existed but had no runner (`client/package.json`
+had no `test` script, no vitest config, and `jsdom` was not installed) → tests never ran;
+CI skipped them via `--if-present`.
+Fix applied:
+- Added dev dep **`jsdom`** (29.1.1) — the missing DOM environment.
+- Added **`client/vitest.config.js`** (jsdom env, `@testing-library/jest-dom/vitest`,
+  alias mirror, `include: src/**/*.{test,spec}.{js,jsx}`, `globals: false`).
+- Added **`client/src/test/setup.js`** (jest-dom matchers + jsdom polyfills for
+  `matchMedia` / `ResizeObserver` / `scrollTo` + RTL `cleanup`). Harness only — no
+  assertions touched.
+- Added scripts: `test` (`vitest run`), `test:watch`, `test:coverage`.
+Evidence (real run): `npm test` → **Test Files 1 passed · Tests 13 passed**; client build OK.
+Related: see **KI-012** (a pre-existing test-harness defect surfaced once the tests ran).
+
+### KI-012 — App-render tests double-wrapped Router (FIXED)
+**Status:** FIXED (verified 2026-09-27)
+**Date:** 2026-09-27
+Was: `auth.test.jsx` logged `Error: You cannot render a <Router> inside another
+<Router>` because `renderWithProviders` wrapped the component in `<BrowserRouter>`
+while `<App/>` already provides its own. Caught by `App`'s ErrorBoundary, so the two
+"Protected Routes" tests passed on store-state assertions while the render was inert.
+Fix (harness only, no assertions changed): `renderWithProviders` now takes
+`withRouter` (default `false`) and only wraps when requested; `<App/>` renders
+unwrapped so it uses its own router.
+Evidence: `npm test` → **13 passed**, and the Router error no longer appears; only
+benign React Router v7 future-flag warnings remain.
 
 ## Security
 
@@ -210,3 +219,101 @@ FR-AD-08 (SHOULD HAVE) references announcement "schedule" without defining it:
 future publish date/time vs expiry-date-only. `ASSUMPTIONS.md` assumes `expiryDate`
 only + immediate publish — **assumption only, not confirmed**.
 
+
+### KI-014 — No automated accessibility scoring in the project
+**Status:** OPEN
+**Date:** 2026-09-27
+> Renumbered from KI-012 on 2026-09-27 (re-audit): the id `KI-012` was already
+> taken by the FIXED Router-double-wrap entry above, so this entry's number was a
+> duplicate. No content changed; see CHANGELOG 2026-09-27.
+The UI/UX audit was asked to report real accessibility scores, but **no a11y tooling is
+installed** — no `axe-core` / `jest-axe` / `vitest-axe` / `eslint-plugin-jsx-a11y` /
+Lighthouse in any of the three `package.json` files, and nothing in CI runs an a11y gate.
+Everything found so far came from a hand-written static scan, which catches a strict
+subset of what axe reports (it will not see contrast-on-rendered-DOM, role/name
+computation, focus order, or landmark structure).
+Not started, because it needs a dependency and the user has preferred zero new deps
+where reasonable. When approved, the cheap path is `vitest-axe` in the existing vitest
+suite (harness already in `client/src/test/setup.js`) rather than a full eslint plugin.
+
+### KI-013 — Server tests and E2E cannot be run from this sandbox
+**Status:** OPEN (environment limitation, not a code defect)
+**Date:** 2026-09-27
+Local sockets are blocked (EPERM on `net.connect(27017)`) and child-process spawn is
+blocked, so MongoDB is unreachable and `fb-watchman` crashes the server Jest run. E2E
+needs both dev servers. Both suites *do* gate in CI (`.github/workflows/ci.yml`), so the
+real result lands there. Until they are run in CI, no claim should be made about server
+test or E2E status.
+
+## UI/UX audit — independent re-audit of the current tree (2026-09-27)
+
+Context: a second, independent UI/UX audit was run against the tree *after* the
+earlier Phase 2–5 UI pass. It found four **functional regressions that pass had
+introduced** (all now fixed) plus a set of HIGH visual/compliance findings that
+remain open. Scope of this pass is UI/UX only — no data-fetching, auth, or API
+code changed.
+
+### KI-015 — IdeaDetailPage + IdeaFormPage crashed on every render (TDZ) — FIXED
+**Status:** FIXED (2026-09-27)
+Was: both pages called `usePageTitle(<non-literal>)` **before** the identifier it
+referenced was declared, putting the identifier in the temporal dead zone →
+`ReferenceError: Cannot access 'idea'/'editId' before initialization` on mount.
+Optional chaining does not help (`idea?.title` still reads the binding).
+- `IdeaDetailPage.jsx`: `usePageTitle(idea?.title)` ran before `const idea = data`.
+- `IdeaFormPage.jsx`: `usePageTitle(editId ? …)` ran before `const { id: editId } = useParams()`.
+Fix: moved each call to after the identifier is bound and before the first early
+return (hooks stay unconditional). No logic changed.
+Regression guard: new `client/src/__tests__/pages.smoke.test.jsx` (C1/C2 cases).
+Verified the guard fails on the buggy code with the exact `ReferenceError`, then
+passes after the fix.
+
+### KI-016 — AdminDashboardPage used ErrorState without importing it — FIXED
+**Status:** FIXED (2026-09-27)
+Was: `<ErrorState>` used 3× (Users/Targets/Criteria tabs) but never imported →
+`ReferenceError` whenever that branch rendered; build/lint never caught it (no
+lint script). Also, Targets and Criteria checked `length === 0` **before**
+`isError`, so a failed fetch rendered the "No targets configured"/"No criteria"
+empty copy instead of the error — the error branch was effectively unreachable.
+Fix: added the import; reordered both branches to `isLoading → isError → empty → list`.
+Regression guard: `pages.smoke.test.jsx` C3.
+
+### KI-017 — GalleryPage error branch was dead and its retry threw — FIXED
+**Status:** FIXED (2026-09-27)
+Was: the gallery query destructured only `{ data, isLoading }`, so `isError` was
+`undefined` (falsy → fell through to the empty state) and `refetch` was
+`undefined` (the "Try again" button threw on click). The Phase-2/3 memory claim
+that a Gallery error state was added was therefore not functionally true.
+Fix: destructured `isError, refetch` from the query. Regression guard:
+`pages.smoke.test.jsx` C4.
+
+### KI-018 — Re-audit HIGH findings (visual / compliance) — mostly RESOLVED
+**Status:** OPEN (one item remains: `ceoUtils`↔`components` duplication)
+**Date:** 2026-09-27
+Tracked for the UI-only fix pass (no functional impact). **Resolved across Phase 2,
+Phase 3.0, and the Phase 3 screen pass — see CHANGELOG 2026-09-27.** All contrast,
+palette, typography/CSP, skeleton, range-input, reduced-motion, tablist-keyboard
+(Admin/IdeaList/IdeaForm/Events) and audit-label items are done; final scans show
+0 hardcoded palette classes, 0 raw hex in JSX, 0 `animate-pulse`, 0
+`appearance-none`, 0 `alert(`, 0 plain-text loaders.
+**STILL OPEN:** `ceoUtils.jsx` reimplements ErrorState/EmptyState/KpiCard/
+PanelSkeleton alongside `components/` — merge candidates, not yet reconciled.
+The original finding bullets below are kept as the record; do not re-report
+resolved items as open.
+> Status per item (see CHANGELOG for evidence). Kept as the record; do not
+> re-report resolved items as open.
+- **Contrast (AA):** RESOLVED (Phase 2 badges + 3.0 body text; icons stay vivid).
+- **Hardcoded palette / raw hex:** RESOLVED (Phase 2 + CEO pass; 0 palette classes,
+  0 raw hex in JSX). Role pills use dark role tokens → white text passes AA.
+- **Typography/CSP:** RESOLVED (Phase 2 — system-ui stack, external links removed).
+- **Skeletons (light-mode + fidelity):** RESOLVED (Phase 2 + 3 + `SkeletonRows`).
+- **Range inputs:** RESOLVED (Phase 3.0 — `.range`).
+- **Reduced motion:** RESOLVED (Phase 2 — global rule).
+- **tablist keyboard (roving focus):** RESOLVED (Admin, IdeaList, IdeaForm, Events).
+- **Audit-filter labels:** RESOLVED (Admin Phase 3).
+- **Password toggle tab order:** RESOLVED (Phase 3, Login).
+- **`alert()` → `Toast`; sidebar shift; NotFound icon:** RESOLVED (Phase 2/3).
+- **Invalid CSS colour (`${var(--x)}15`):** RESOLVED (CEO pass → `color-mix`).
+- **Component duplication (`ceoUtils` vs `components`):** STILL OPEN.
+
+**A11y scoring:** still unmet — KI-014. No axe/Lighthouse could be run (registry
+blocked); findings above are from source inspection, not rendered-DOM tooling.

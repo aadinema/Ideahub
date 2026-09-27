@@ -5,7 +5,10 @@ import { committeeAPI } from '../../api';
 import IdeaStatusBadge from '../../components/IdeaStatusBadge';
 import Modal from '../../components/Modal';
 import RichText from '../../components/RichText';
-import { ArrowLeft, CheckCircle2, Play, AlertCircle, Clock, FileText, XCircle, Undo2, Award } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Play, AlertCircle, Clock, FileText, XCircle, Undo2, Award, Download } from 'lucide-react';
+import usePageTitle from '../../hooks/usePageTitle';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
 
 const ACTION_TITLES = {
   publish: 'Approve for Publishing',
@@ -15,6 +18,7 @@ const ACTION_TITLES = {
 };
 
 export default function Committee360Page() {
+  usePageTitle("Idea 360° View");
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -24,7 +28,7 @@ export default function Committee360Page() {
   const [showAllOwnerDepartments, setShowAllOwnerDepartments] = useState(false);
   const [error, setError] = useState('');
 
-  const { data: viewData, isLoading } = useQuery({
+  const { data: viewData, isLoading, isError, refetch } = useQuery({
     queryKey: ['committee360', id],
     queryFn: () => committeeAPI.get360View(id).then(r => r.data.data),
   });
@@ -78,11 +82,44 @@ export default function Committee360Page() {
   };
 
   if (isLoading) {
-    return <div className="page-enter max-w-[1200px] mx-auto text-center py-20 text-theme-text0">Loading 360° View...</div>;
+    return (
+      <div className="page-enter max-w-[1200px] mx-auto pb-12 space-y-6" aria-busy="true" aria-label="Loading idea view">
+        <div className="h-4 w-28 skeleton rounded" />
+        <div className="h-8 w-2/3 skeleton rounded" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="glass rounded-2xl p-6 space-y-3">
+                <div className="h-3 w-28 skeleton rounded" />
+                <div className="h-3 w-full skeleton rounded" />
+                <div className="h-3 w-5/6 skeleton rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="space-y-6">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="glass rounded-2xl p-5 space-y-3">
+                <div className="h-3 w-20 skeleton rounded" />
+                <div className="h-3 w-3/4 skeleton rounded" />
+                <div className="h-3 w-1/2 skeleton rounded" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="page-enter max-w-[1200px] mx-auto">
+        <ErrorState title="Couldn't load this idea" message="The 360° view didn't load. Check your connection and try again." onRetry={() => refetch()} />
+      </div>
+    );
   }
 
   if (!viewData?.idea) {
-    return <div className="page-enter max-w-[1200px] mx-auto text-center py-20 text-rose-500">Idea not found.</div>;
+    return <div className="page-enter max-w-[1200px] mx-auto text-center py-20 text-error-text">Idea not found.</div>;
   }
 
   const { idea, evaluations = [], averageScore } = viewData;
@@ -117,16 +154,16 @@ export default function Committee360Page() {
 
         {/* ── Committee Action Bar ── */}
         <div className="flex flex-wrap gap-2 p-4 glass rounded-2xl">
-          <button onClick={() => handleAction('publish')} className="btn btn-secondary !bg-emerald-500/10 !text-emerald-600 hover:!bg-emerald-500/20 !border-emerald-500/20">
+          <button onClick={() => handleAction('publish')} className="btn btn-secondary !bg-success-light !text-success-text hover:!bg-success/20 !border-success/20">
             <CheckCircle2 className="w-4 h-4" /> Publish
           </button>
-          <button onClick={() => handleAction('implement')} className="btn btn-secondary !bg-blue-500/10 !text-blue-600 hover:!bg-blue-500/20 !border-blue-500/20">
+          <button onClick={() => handleAction('implement')} className="btn btn-secondary !bg-info-light !text-info-text hover:!bg-info-light !border-info/20">
             <Play className="w-4 h-4" /> Implement
           </button>
-          <button onClick={() => handleAction('reject')} className="btn btn-secondary !bg-rose-500/10 !text-rose-600 hover:!bg-rose-500/20 !border-rose-500/20">
+          <button onClick={() => handleAction('reject')} className="btn btn-secondary !bg-error-light !text-error-text hover:!bg-error/20 !border-error/20">
             <XCircle className="w-4 h-4" /> Reject
           </button>
-          <button onClick={() => handleAction('defer')} className="btn btn-secondary !bg-theme-accent/10 !text-theme-accent hover:!bg-theme-accent/10 !border-amber-500/20">
+          <button onClick={() => handleAction('defer')} className="btn btn-secondary !bg-theme-accent/10 !text-theme-accent hover:!bg-theme-accent/10 !border-theme-accent/20">
             <Undo2 className="w-4 h-4" /> Defer
           </button>
         </div>
@@ -163,14 +200,18 @@ export default function Committee360Page() {
               <div className="flex items-center gap-4 mb-6">
                 <h3 className="text-xl font-bold text-theme-text">Evaluator Feedback</h3>
                 {averageScore != null && (
-                  <div className="px-3 py-1 bg-emerald-500/15 text-emerald-700 rounded-lg font-bold">
+                  <div className="px-3 py-1 bg-success/15 text-success-text rounded-lg font-bold">
                     Avg Score: {averageScore} / 10.0
                   </div>
                 )}
               </div>
 
               {evaluations.length === 0 ? (
-                <p className="text-theme-text0 italic">No evaluations found.</p>
+                <EmptyState
+                  icon={Award}
+                  title="No evaluations yet"
+                  message="Evaluator feedback will appear here once scores are submitted."
+                />
               ) : (
                 <div className="space-y-4">
                   {evaluations.map(ev => (
@@ -180,7 +221,7 @@ export default function Committee360Page() {
                           <p className="font-medium text-theme-text">{ev.evaluatorId?.name}</p>
                           <p className="text-xs text-theme-text0">{ev.evaluatorId?.department}</p>
                           {ev.decision && (
-                            <span className="inline-block mt-1 text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
+                            <span className="inline-block mt-1 text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
                               {ev.decision}
                             </span>
                           )}
@@ -220,7 +261,7 @@ export default function Committee360Page() {
                 <dt className="text-theme-text0 mb-1">Expected Benefits</dt>
                 <dd className="flex flex-wrap gap-1">
                   {idea.benefitTypes?.map((b) => (
-                    <span key={b} className="px-2 py-1 rounded-md bg-theme-accent/10 text-theme-accent text-[10px] uppercase tracking-wider">
+                    <span key={b} className="px-2 py-1 rounded-md bg-theme-accent/10 text-theme-accent text-[11px] uppercase tracking-wider">
                       {b.replace(/_/g, ' ')}
                     </span>
                   ))}
@@ -235,9 +276,12 @@ export default function Committee360Page() {
               <h3 className="text-label mb-3">Attachments ({idea.attachments.length})</h3>
               <div className="space-y-2">
                 {idea.attachments.map((att, idx) => (
-                  <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 rounded-lg bg-theme-surface/60 hover:bg-theme-border/50 transition-colors">
-                    <FileText className="w-4 h-4 text-theme-text0" />
-                    <span className="text-xs text-theme-text truncate">{att.fileName}</span>
+                  <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between gap-2 p-2 rounded-lg bg-theme-surface/60 hover:bg-theme-border/50 transition-colors group">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <FileText className="w-4 h-4 text-theme-text0 flex-shrink-0" aria-hidden="true" />
+                      <span className="text-xs text-theme-text truncate">{att.fileName}</span>
+                    </span>
+                    <Download className="w-3 h-3 text-theme-text0 group-hover:text-theme-accent flex-shrink-0" aria-hidden="true" />
                   </a>
                 ))}
               </div>
@@ -252,11 +296,11 @@ export default function Committee360Page() {
                 <div key={idx} className="relative pl-4 border-l-2 border-theme-border/50 last:border-transparent">
                   <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-theme-accent" />
                   <p className="text-xs font-semibold text-theme-text capitalize">{hist.status.replace(/_/g, ' ')}</p>
-                  <p className="text-[10px] text-theme-text0 flex items-center gap-1 mt-0.5">
+                  <p className="text-[11px] text-theme-text0 flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" />
                     {new Date(hist.timestamp).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
                   </p>
-                  <p className="text-[10px] text-theme-text0 mt-0.5">By: {hist.actor?.name || 'System'}</p>
+                  <p className="text-[11px] text-theme-text0 mt-0.5">By: {hist.actor?.name || 'System'}</p>
                 </div>
               ))}
             </div>
@@ -272,7 +316,7 @@ export default function Committee360Page() {
         description={<>Finalizing decision for <strong className="text-theme-text">{idea.title}</strong>.</>}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm flex items-start gap-2">
+          <div className="mb-4 p-3 rounded-lg bg-error-light border border-error/20 text-theme-text text-sm flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -281,7 +325,7 @@ export default function Committee360Page() {
         <form onSubmit={submitAction} className="space-y-4">
           {actionType === 'implement' && (
             <div>
-              <label htmlFor="impl-owner" className="text-label block mb-2">Implementation Owner <span className="text-rose-500">*</span></label>
+              <label htmlFor="impl-owner" className="text-label block mb-2">Implementation Owner <span className="text-error-text">*</span></label>
               <select
                 id="impl-owner"
                 className="input-base"
@@ -314,7 +358,7 @@ export default function Committee360Page() {
 
           <div>
             <label htmlFor="committee-comment" className="text-label block mb-2">
-              Comment / Rationale {(actionType === 'reject' || actionType === 'defer') && <span className="text-rose-500">* (min 20 chars)</span>}
+              Comment / Rationale {(actionType === 'reject' || actionType === 'defer') && <span className="text-error-text">* (min 20 chars)</span>}
             </label>
             <textarea
               id="committee-comment"

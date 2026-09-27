@@ -3,27 +3,31 @@
  * KPI summary, department/category charts, target tracker, and
  * multi-format export (xlsx / csv / pdf) via authenticated blob download.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { reportsAPI } from '../../api';
 import { getFYLabel } from '@shared/constants';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, TrendingUp, IndianRupee, Target, PieChart as PieIcon } from 'lucide-react';
+import usePageTitle from '../../hooks/usePageTitle';
+import ErrorState from '../../components/ErrorState';
+import EmptyState from '../../components/EmptyState';
+import Toast from '../../components/Toast';
 
-// Warm palette to match the cream/gold theme.
-const COLORS = ['#c5a059', '#b08a46', '#8c6a32', '#dfaa5b', '#eac585', '#737373'];
+// Theme-token categorical palette (adapts to light/dark; matches the navy/indigo brand).
+const COLORS = ['var(--primary)', 'var(--info)', 'var(--purple)', 'var(--success)', 'var(--warning)', 'var(--text-muted)'];
 const TARGET_TYPE_LABEL = {
   total_ideas: 'Total Ideas',
   approved_ideas: 'Approved Ideas',
   implemented_ideas: 'Implemented Ideas',
 };
 
-// Light-theme tooltip styling reused across charts.
+// Theme-token tooltip styling (correct in light and dark mode).
 const TOOLTIP_STYLE = {
-  backgroundColor: '#FDFBF7',
-  borderColor: '#E2DDD5',
+  backgroundColor: 'var(--surface)',
+  borderColor: 'var(--border)',
   borderRadius: '12px',
-  color: '#1A1A1A',
+  color: 'var(--text-primary)',
 };
 
 const EXPORT_FORMATS = [
@@ -33,14 +37,23 @@ const EXPORT_FORMATS = [
 ];
 
 export default function ReportsPage() {
+  usePageTitle("Executive Analytics");
   const [exporting, setExporting] = useState('');
+  const [toast, setToast] = useState(null);
 
-  const { data: dashboardData, isLoading: dashLoading } = useQuery({
+  // Auto-dismiss toasts so they do not linger.
+  useEffect(() => {
+    if (!toast) return undefined;
+    const t = setTimeout(() => setToast(null), 5000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const { data: dashboardData, isLoading: dashLoading, isError: dashError, refetch: refetchDash } = useQuery({
     queryKey: ['reportDashboard'],
     queryFn: () => reportsAPI.getDashboard().then((r) => r.data.data),
   });
 
-  const { data: targetData = [] } = useQuery({
+  const { data: targetData = [], isError: targetError, refetch: refetchTargets } = useQuery({
     queryKey: ['reportTargets'],
     queryFn: () => reportsAPI.getDepartmentTargets().then((r) => r.data.data),
   });
@@ -59,14 +72,37 @@ export default function ReportsPage() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      alert('Failed to export report.');
+      setToast({ tone: 'error', message: 'Failed to export the report. Please try again.' });
     } finally {
       setExporting('');
     }
   };
 
   if (dashLoading) {
-    return <div className="page-enter max-w-[1400px] mx-auto text-center py-20 text-theme-text/80">Loading Executive Analytics…</div>;
+    return (
+      <div className="page-enter max-w-[1400px] mx-auto pb-12 space-y-8" aria-busy="true" aria-label="Loading executive analytics">
+        <div className="h-9 w-1/3 skeleton rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="glass rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl skeleton" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-1/2 skeleton rounded" />
+                <div className="h-7 w-1/3 skeleton rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="glass rounded-2xl p-6">
+              <div className="h-4 w-1/3 skeleton rounded mb-6" />
+              <div className="h-56 w-full skeleton rounded-xl" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   const deptData = dashboardData?.departmentBreakdown?.map((item) => ({ name: item._id, count: item.count })) || [];
@@ -77,137 +113,162 @@ export default function ReportsPage() {
     <div className="page-enter max-w-[1400px] mx-auto pb-12">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="text-display text-4xl text-theme-text mb-2">Executive Analytics & Reports</h1>
+          <h1 className="text-display text-3xl text-theme-text mb-2">Executive Analytics &amp; Reports</h1>
           <p className="text-theme-text/80">System-wide performance, department targets, and financial benefits breakdown.</p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Export report">
+          <span className="text-xs font-semibold text-theme-text0 uppercase tracking-wider mr-1">Export</span>
           {EXPORT_FORMATS.map((fmt) => (
             <button
               key={fmt.key}
               onClick={() => handleExport(fmt)}
               disabled={!!exporting}
               className="btn btn-secondary btn-sm"
+              aria-label={`Export report as ${fmt.label}`}
             >
-              <Download className="w-4 h-4" /> {exporting === fmt.key ? 'Exporting…' : fmt.label}
+              <Download className="w-4 h-4" aria-hidden="true" /> {exporting === fmt.key ? 'Exporting…' : fmt.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="glass rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center shrink-0">
-            <TrendingUp className="w-6 h-6 text-theme-accent" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Total Submissions</p>
-            <p className="text-3xl font-bold text-theme-text">{dashboardData?.totalIdeas || 0}</p>
-          </div>
+      {toast && (
+        <div className="mb-6">
+          <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} />
         </div>
+      )}
 
-        <div className="glass rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <IndianRupee className="w-6 h-6 text-emerald-600" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Total Financial Benefits</p>
-            <p className="text-3xl font-bold text-emerald-600">₹{(finSummary.totalCostSavings + finSummary.totalRevenueIncrease).toLocaleString('en-IN')}</p>
-          </div>
+      {dashError ? (
+        <div className="glass rounded-2xl mb-8">
+          <ErrorState
+            title="Couldn't load reports"
+            message="The analytics didn't load. Check your connection and try again."
+            onRetry={() => refetchDash()}
+          />
         </div>
+      ) : (
+        <>
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="glass rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center shrink-0">
+                <TrendingUp className="w-6 h-6 text-theme-accent" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Total Submissions</p>
+                <p className="text-3xl font-bold text-theme-text tabular-nums">{dashboardData?.totalIdeas || 0}</p>
+              </div>
+            </div>
 
-        <div className="glass rounded-2xl p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center shrink-0">
-            <Target className="w-6 h-6 text-theme-accent" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Avg Target Performance</p>
-            <p className="text-3xl font-bold text-theme-accent">
-              {targetData.length > 0 ? `${(targetData.reduce((s, t) => s + (t.achievementPct || 0), 0) / targetData.length).toFixed(1)}%` : 'N/A'}
-            </p>
-          </div>
-        </div>
-      </div>
+            <div className="glass rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-success-light border border-success/30 flex items-center justify-center shrink-0">
+                <IndianRupee className="w-6 h-6 text-success" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Total Financial Benefits</p>
+                <p className="text-3xl font-bold text-success-text tabular-nums">₹{(finSummary.totalCostSavings + finSummary.totalRevenueIncrease).toLocaleString('en-IN')}</p>
+              </div>
+            </div>
 
-      {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-theme-accent" /> Submissions by Department
-          </h3>
-          <div className="h-72 w-full">
-            {deptData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-sm text-theme-text0 italic">No submission data.</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={deptData}>
-                  <XAxis dataKey="name" stroke="#737373" fontSize={12} />
-                  <YAxis stroke="#737373" fontSize={12} allowDecimals={false} />
-                  <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'rgba(197,160,89,0.08)' }} />
-                  <Bar dataKey="count" fill="#c5a059" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+            <div className="glass rounded-2xl p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-theme-accent/10 border border-theme-accent/20 flex items-center justify-center shrink-0">
+                <Target className="w-6 h-6 text-theme-accent" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-theme-text/80 uppercase tracking-wider">Avg Target Performance</p>
+                <p className="text-3xl font-bold text-theme-accent tabular-nums">
+                  {targetData.length > 0 ? `${(targetData.reduce((s, t) => s + (t.achievementPct || 0), 0) / targetData.length).toFixed(1)}%` : 'N/A'}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="glass rounded-2xl p-6">
-          <h3 className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
-            <PieIcon className="w-5 h-5 text-theme-accent" /> Submissions by Category
-          </h3>
-          <div className="h-72 w-full flex items-center justify-center">
-            {catData.length === 0 ? (
-              <div className="text-sm text-theme-text0 italic">No category data.</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={catData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                    {catData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={TOOLTIP_STYLE} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          {/* Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <section className="glass rounded-2xl p-6" aria-labelledby="chart-dept-heading">
+              <h2 id="chart-dept-heading" className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-theme-accent" aria-hidden="true" /> Submissions by Department
+              </h2>
+              {deptData.length === 0 ? (
+                <EmptyState title="No submission data" message="Department submissions will appear here once ideas are created." />
+              ) : (
+                <div className="h-72 w-full" role="img"
+                  aria-label={`Bar chart of submissions by department for ${deptData.length} departments. Highest: ${deptData.reduce((a, b) => (b.count > a.count ? b : a)).name}.`}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={deptData}>
+                      <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} />
+                      <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: 'var(--primary-light)' }} />
+                      <Bar dataKey="count" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </section>
+
+            <section className="glass rounded-2xl p-6" aria-labelledby="chart-cat-heading">
+              <h2 id="chart-cat-heading" className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
+                <PieIcon className="w-5 h-5 text-theme-accent" aria-hidden="true" /> Submissions by Category
+              </h2>
+              {catData.length === 0 ? (
+                <EmptyState title="No category data" message="Category breakdown appears once ideas carry a category." />
+              ) : (
+                <div className="h-72 w-full" role="img"
+                  aria-label={`Pie chart of submissions by category: ${catData.map((c) => `${c.name} ${c.value}`).join(', ')}.`}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie data={catData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                        {catData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </section>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       {/* Department Targets Progress Table */}
-      <div className="glass rounded-2xl p-6">
-        <h3 className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
-          <Target className="w-5 h-5 text-theme-accent" /> Department Target vs Achievement Tracker
-        </h3>
+      <section className="glass rounded-2xl p-6" aria-labelledby="targets-heading">
+        <h2 id="targets-heading" className="text-lg font-bold text-theme-text mb-6 flex items-center gap-2">
+          <Target className="w-5 h-5 text-theme-accent" aria-hidden="true" /> Department Target vs Achievement Tracker
+        </h2>
 
-        {targetData.length === 0 ? (
-          <p className="text-theme-text/80 italic text-center py-8">No department targets configured yet for {getFYLabel()}.</p>
+        {targetError ? (
+          <ErrorState title="Couldn't load department targets" message="The target tracker didn't load." onRetry={() => refetchTargets()} />
+        ) : targetData.length === 0 ? (
+          <p className="text-theme-text0 italic text-center py-8">No department targets configured yet for {getFYLabel()}.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-theme-text/80">
-              <thead className="bg-theme-surface/50 text-xs font-semibold text-theme-text/80 uppercase tracking-wider">
+          <div className="table-responsive">
+            <table className="table-base">
+              <caption className="sr-only">Department targets versus achieved values for {getFYLabel()}</caption>
+              <thead>
                 <tr>
-                  <th className="p-4 rounded-l-xl">Department</th>
-                  <th className="p-4">Target Type</th>
-                  <th className="p-4">Target Value</th>
-                  <th className="p-4">Achieved</th>
-                  <th className="p-4 rounded-r-xl">Progress</th>
+                  <th scope="col">Department</th>
+                  <th scope="col">Target Type</th>
+                  <th scope="col">Target Value</th>
+                  <th scope="col">Achieved</th>
+                  <th scope="col">Progress</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-theme-border/50">
+              <tbody>
                 {targetData.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-theme-surface/30 transition-colors">
-                    <td className="p-4 font-semibold text-theme-text">{row.department}</td>
-                    <td className="p-4">{TARGET_TYPE_LABEL[row.targetType] || row.targetType}</td>
-                    <td className="p-4 font-bold">{row.targetValue}</td>
-                    <td className="p-4 font-bold text-emerald-600">{row.achievedValue}</td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-3 w-48">
+                  <tr key={idx}>
+                    <td className="font-semibold text-theme-text">{row.department}</td>
+                    <td>{TARGET_TYPE_LABEL[row.targetType] || row.targetType}</td>
+                    <td className="font-bold tabular-nums">{row.targetValue}</td>
+                    <td className="font-bold text-success-text tabular-nums">{row.achievedValue}</td>
+                    <td>
+                      <div className="flex items-center gap-3 w-48" role="img" aria-label={`${row.achievementPct} percent of target`}>
                         <div className="flex-1 h-2 bg-theme-surface rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-theme-accent to-emerald-500 rounded-full" style={{ width: `${Math.min(100, row.achievementPct || 0)}%` }} />
+                          <div className="h-full gradient-brand rounded-full" style={{ width: `${Math.min(100, row.achievementPct || 0)}%` }} />
                         </div>
-                        <span className="text-xs font-bold text-theme-text/80">{row.achievementPct}%</span>
+                        <span className="text-xs font-bold text-theme-text/80 tabular-nums">{row.achievementPct}%</span>
                       </div>
                     </td>
                   </tr>
@@ -216,7 +277,7 @@ export default function ReportsPage() {
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

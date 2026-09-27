@@ -10,6 +10,9 @@ import { useSelector } from 'react-redux';
 import { eventsAPI } from '../../api';
 import { EVENT_STATUS, EVENT_VISIBILITY } from '@shared/constants';
 import IdeaStatusBadge from '../../components/IdeaStatusBadge';
+import EmptyState from '../../components/EmptyState';
+import ErrorState from '../../components/ErrorState';
+import usePageTitle from '../../hooks/usePageTitle';
 import {
   Trophy, ArrowLeft, Lightbulb, Medal, Calendar, Users, Target,
   Tag, CheckCircle2, ArrowRightCircle, Lock, Gauge, AlertCircle,
@@ -20,20 +23,21 @@ const fmtDate = (d) =>
   d ? new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
 
 const STATUS_STYLE = {
-  [EVENT_STATUS.ACTIVE]: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25',
-  [EVENT_STATUS.EXTENDED]: 'bg-blue-500/15 text-blue-600 border-blue-500/25',
+  [EVENT_STATUS.ACTIVE]: 'bg-success/15 text-success-text border-success/20',
+  [EVENT_STATUS.EXTENDED]: 'bg-info-light text-info-text border-info/25',
   [EVENT_STATUS.CLOSED]: 'bg-theme-border/50 text-theme-text0 border-theme-border',
   [EVENT_STATUS.DRAFT]: 'bg-theme-border/50 text-theme-text0 border-theme-border',
 };
 
 export default function EventDetailPage() {
+  usePageTitle("Event");
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useSelector((state) => state.auth.user);
   const [successMsg, setSuccessMsg] = useState('');
 
-  const { data: event, isLoading: eventLoading, isError } = useQuery({
+  const { data: event, isLoading: eventLoading, isError, refetch } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getById(id).then((r) => r.data.data),
   });
@@ -72,7 +76,7 @@ export default function EventDetailPage() {
       </button>
 
       {successMsg && (
-        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 rounded-xl flex items-center gap-3">
+        <div className="mb-6 p-4 bg-success-light border border-success/30 text-success-text rounded-xl flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 shrink-0" />
           <p>{successMsg}</p>
         </div>
@@ -80,23 +84,25 @@ export default function EventDetailPage() {
 
       {/* ── Event header ── */}
       {eventLoading ? (
-        <div className="glass rounded-2xl h-64 animate-pulse mb-8" />
+        <div className="h-64 skeleton rounded-2xl mb-8" />
       ) : isError || !event ? (
-        <div className="glass rounded-2xl p-12 text-center mb-8">
-          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-3" />
-          <p className="text-theme-text/80">This event could not be found or you don't have access to it.</p>
-        </div>
+        <ErrorState
+          className="glass rounded-2xl mb-8"
+          title="Event unavailable"
+          message="This event could not be found or you don't have access to it."
+          onRetry={() => refetch()}
+        />
       ) : (
         <div className="glass rounded-2xl p-6 md:p-8 mb-8">
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${STATUS_STYLE[event.status] || STATUS_STYLE[EVENT_STATUS.DRAFT]}`}>
+            <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md border ${STATUS_STYLE[event.status] || STATUS_STYLE[EVENT_STATUS.DRAFT]}`}>
               {label(event.status)}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-theme-accent/10 text-theme-accent border border-theme-accent/20">
+            <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-theme-accent/10 text-theme-accent border border-theme-accent/20">
               {label(event.eventType)}
             </span>
             {event.visibility === EVENT_VISIBILITY.RESTRICTED && (
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-600 border border-rose-500/25 flex items-center gap-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-error/15 text-error-text border border-error/20 flex items-center gap-1">
                 <Lock className="w-3 h-3" /> Restricted
               </span>
             )}
@@ -124,7 +130,7 @@ export default function EventDetailPage() {
 
           {/* FR-IE-06 — closed / past-deadline notice */}
           {submissionsClosed && (
-            <div role="alert" className="flex items-start gap-3 p-4 mb-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 text-sm">
+            <div role="alert" className="flex items-start gap-3 p-4 mb-2 rounded-xl bg-warning/10 border border-warning/30 text-warning-text text-sm">
               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <span>
                 This event {isClosed ? 'has been closed' : 'deadline has passed'}. Idea submissions are no longer
@@ -139,7 +145,7 @@ export default function EventDetailPage() {
               <button
                 onClick={() => joinMutation.mutate()}
                 disabled={isJoined || joinMutation.isPending || isFull}
-                className={`btn ${isJoined ? 'btn-secondary !text-emerald-600 cursor-not-allowed' : 'btn-primary'}`}
+                className={`btn ${isJoined ? 'btn-secondary !text-success-text cursor-not-allowed' : 'btn-primary'}`}
               >
                 {isJoined ? (
                   <><CheckCircle2 className="w-4 h-4" /> You've Joined</>
@@ -172,14 +178,15 @@ export default function EventDetailPage() {
         {lbLoading ? (
           <div className="space-y-4">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-16 bg-theme-surface rounded-xl animate-pulse" />
+              <div key={i} className="h-16 skeleton rounded-xl" />
             ))}
           </div>
         ) : leaderboard.length === 0 ? (
-          <div className="text-center py-12">
-            <Lightbulb className="w-12 h-12 text-theme-text/60 mx-auto mb-3" />
-            <p className="text-theme-text/80">No ideas have been evaluated for this event yet.</p>
-          </div>
+          <EmptyState
+            icon={Trophy}
+            title="No scored ideas yet"
+            message="The leaderboard appears once evaluators have scored ideas for this event."
+          />
         ) : (
           <div className="space-y-4">
             {leaderboard.map((idea, index) => (
@@ -191,8 +198,8 @@ export default function EventDetailPage() {
                 <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-lg bg-theme-surface border border-theme-border relative">
                   {index === 0 && <Medal className="w-5 h-5 text-theme-accent absolute -top-2 -right-2 drop-shadow-md" />}
                   {index === 1 && <Medal className="w-5 h-5 text-theme-text/80 absolute -top-2 -right-2 drop-shadow-md" />}
-                  {index === 2 && <Medal className="w-5 h-5 text-amber-600 absolute -top-2 -right-2 drop-shadow-md" />}
-                  <span className={`text-xl font-bold ${index === 0 ? 'text-theme-accent' : index === 1 ? 'text-theme-text' : index === 2 ? 'text-amber-600' : 'text-theme-text0'}`}>
+                  {index === 2 && <Medal className="w-5 h-5 text-warning absolute -top-2 -right-2 drop-shadow-md" />}
+                  <span className={`text-xl font-bold ${index === 0 ? 'text-theme-accent' : index === 1 ? 'text-theme-text' : index === 2 ? 'text-warning-text' : 'text-theme-text0'}`}>
                     #{index + 1}
                   </span>
                 </div>
@@ -213,8 +220,8 @@ export default function EventDetailPage() {
                     <IdeaStatusBadge status={idea.status} />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-emerald-600">{idea.averageScore}</div>
-                    <div className="text-[10px] text-theme-text0 uppercase tracking-wider">
+                    <div className="text-2xl font-bold text-success-text">{idea.averageScore}</div>
+                    <div className="text-[11px] text-theme-text0 uppercase tracking-wider">
                       {idea.evaluationsCount} Evals
                     </div>
                   </div>
@@ -233,7 +240,7 @@ function Meta({ icon: Icon, label: metaLabel, value }) {
     <div className="flex items-start gap-2.5">
       <Icon className="w-4 h-4 text-theme-text0 mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-[10px] font-semibold text-theme-text0 uppercase tracking-wider">{metaLabel}</p>
+        <p className="text-[11px] font-semibold text-theme-text0 uppercase tracking-wider">{metaLabel}</p>
         <p className="text-sm font-semibold text-theme-text truncate">{value}</p>
       </div>
     </div>

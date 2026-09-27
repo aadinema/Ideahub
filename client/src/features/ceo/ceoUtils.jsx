@@ -73,12 +73,18 @@ export const usePrefersReducedMotion = () => {
 }
 
 // ── Health score display bands (display labels only — not part of the score) ──
+// `color` is the AA-safe text token; `tint` is a pre-mixed background so the
+// pill does not rely on hex-alpha string concatenation (which breaks on var()).
 export const healthBand = (score) => {
-  if (score === null || score === undefined) return { label: 'No data yet', color: 'var(--text-muted)' }
-  if (score >= 90) return { label: 'Exceptional', color: 'var(--success)' }
-  if (score >= 70) return { label: 'Healthy',     color: 'var(--primary)' }
-  if (score >= 50) return { label: 'Developing',  color: 'var(--warning)' }
-  return { label: 'Needs attention', color: 'var(--error)' }
+  if (score === null || score === undefined)
+    return { label: 'No data yet', color: 'var(--text-secondary)', tint: 'var(--primary-light)' }
+  if (score >= 90)
+    return { label: 'Exceptional', color: 'var(--success-text)', tint: 'color-mix(in srgb, var(--success-text) 15%, transparent)' }
+  if (score >= 70)
+    return { label: 'Healthy', color: 'var(--primary)', tint: 'var(--primary-light)' }
+  if (score >= 50)
+    return { label: 'Developing', color: 'var(--warning-text)', tint: 'color-mix(in srgb, var(--warning-text) 15%, transparent)' }
+  return { label: 'Needs attention', color: 'var(--error-text)', tint: 'color-mix(in srgb, var(--error-text) 15%, transparent)' }
 }
 
 // ── UI atoms ──
@@ -112,14 +118,14 @@ export function KpiTile({ icon: Icon, label, value, sub, color, definition, load
         <span className="text-[11px] font-semibold uppercase tracking-wider text-theme-text0 leading-tight">
           {label}
         </span>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${color}15` }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `color-mix(in srgb, ${color} 12%, transparent)` }}>
           <Icon className="w-3.5 h-3.5" style={{ color }} aria-hidden="true" />
         </div>
       </div>
       {loading ? (
         <div className="space-y-2">
-          <div className="h-7 w-20 bg-theme-surface animate-pulse rounded" />
-          <div className="h-3 w-24 bg-theme-surface animate-pulse rounded" />
+          <div className="h-7 w-20 skeleton rounded" />
+          <div className="h-3 w-24 skeleton rounded" />
         </div>
       ) : (
         <>
@@ -140,7 +146,7 @@ export function KpiTile({ icon: Icon, label, value, sub, color, definition, load
   )
 
   const cls =
-    'glass rounded-xl p-4 flex flex-col gap-2.5 transition-all duration-300 ' +
+    'glass rounded-xl p-4 flex flex-col gap-2.5 transition-all duration-200 ' +
     (onClick ? 'hover:border-theme-accent/40 cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-[var(--primary)]' : '')
 
   if (onClick) {
@@ -190,10 +196,10 @@ export function PanelSkeleton({ rows = 3 }) {
     <div className="space-y-3" aria-hidden="true">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-theme-surface animate-pulse" />
+          <div className="h-8 w-8 rounded-lg skeleton" />
           <div className="flex-1 space-y-2">
-            <div className="h-3.5 bg-theme-surface animate-pulse rounded w-2/3" />
-            <div className="h-2.5 bg-theme-surface animate-pulse rounded w-1/3" />
+            <div className="h-3.5 skeleton rounded w-2/3" />
+            <div className="h-2.5 skeleton rounded w-1/3" />
           </div>
         </div>
       ))}
@@ -216,7 +222,7 @@ export function EmptyState({ title, hint }) {
 export function ErrorState({ message = 'Unable to load this section.', onRetry }) {
   return (
     <div className="py-8 text-center" role="alert">
-      <AlertTriangle className="w-7 h-7 text-amber-500 mx-auto mb-2.5" aria-hidden="true" />
+      <AlertTriangle className="w-7 h-7 text-warning mx-auto mb-2.5" aria-hidden="true" />
       <p className="text-sm font-medium text-theme-text">{message}</p>
       {onRetry && (
         <button type="button" onClick={onRetry} className="btn btn-secondary btn-sm mt-3">

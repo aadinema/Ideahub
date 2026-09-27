@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { benefitsAPI } from '../../api';
+import usePageTitle from '../../hooks/usePageTitle';
 import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function BenefitsFormPage() {
+  usePageTitle("Record Benefits");
   const { ideaId, implementationId } = useParams();
   const navigate = useNavigate();
 
@@ -84,7 +86,7 @@ export default function BenefitsFormPage() {
   return (
     <div className="page-enter max-w-[800px] mx-auto pb-12">
       <button onClick={() => navigate(-1)} className="text-sm text-theme-text/80 hover:text-theme-accent flex items-center gap-1 mb-6 transition-colors">
-        <ArrowLeft className="w-4 h-4" /> Back to Implementations
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" /> Back to Implementations
       </button>
 
       <div className="mb-8">
@@ -94,8 +96,8 @@ export default function BenefitsFormPage() {
 
       <div className="glass rounded-2xl p-6 md:p-8">
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 rounded-lg bg-error-light border border-error/20 text-error-text flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-sm">{error}</p>
           </div>
         )}
@@ -108,10 +110,11 @@ export default function BenefitsFormPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-label block mb-2">Cost Savings (INR ₹)</label>
-                <input 
-                  type="number" 
-                  name="costSavingsINR" 
+                <label htmlFor="benefits-cost-savings" className="text-label block mb-2">Cost Savings (INR ₹)</label>
+                <input
+                  id="benefits-cost-savings"
+                  type="number"
+                  name="costSavingsINR"
                   value={form.costSavingsINR} 
                   onChange={handleInputChange} 
                   className="input-base" 
@@ -120,10 +123,11 @@ export default function BenefitsFormPage() {
               </div>
 
               <div>
-                <label className="text-label block mb-2">Revenue Increase (INR ₹)</label>
-                <input 
-                  type="number" 
-                  name="revenueIncreaseINR" 
+                <label htmlFor="benefits-revenue-increase" className="text-label block mb-2">Revenue Increase (INR ₹)</label>
+                <input
+                  id="benefits-revenue-increase"
+                  type="number"
+                  name="revenueIncreaseINR"
                   value={form.revenueIncreaseINR} 
                   onChange={handleInputChange} 
                   className="input-base" 
@@ -134,11 +138,12 @@ export default function BenefitsFormPage() {
 
             {/* Evidence attachment indicator */}
             <div className={`p-4 rounded-xl border transition-colors ${totalFinancial > 100000 ? 'bg-theme-accent/10 border-theme-accent/40' : 'bg-theme-surface/40 border-theme-border'}`}>
-              <label className="text-label block mb-2">
+              <label htmlFor="benefits-evidence" className="text-label block mb-2">
                 Evidence Document {totalFinancial > 100000 && <span className="text-theme-accent">* (Mandatory for &gt; ₹1 Lakh)</span>}
               </label>
-              <input 
-                type="file" 
+              <input
+                id="benefits-evidence"
+                type="file"
                 multiple 
                 onChange={handleFileChange} 
                 className="block w-full text-xs text-theme-text/80 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-theme-surface file:text-theme-text hover:file:bg-theme-border cursor-pointer"
@@ -152,10 +157,11 @@ export default function BenefitsFormPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-label block mb-2">Efficiency Improvement (%)</label>
-                <input 
-                  type="number" 
-                  name="efficiencyImprovementPct" 
+                <label htmlFor="benefits-efficiency" className="text-label block mb-2">Efficiency Improvement (%)</label>
+                <input
+                  id="benefits-efficiency"
+                  type="number"
+                  name="efficiencyImprovementPct"
                   value={form.efficiencyImprovementPct} 
                   onChange={handleInputChange} 
                   className="input-base" 
@@ -164,10 +170,11 @@ export default function BenefitsFormPage() {
               </div>
 
               <div>
-                <label className="text-label block mb-2">Productivity Gain (%)</label>
-                <input 
-                  type="number" 
-                  name="productivityGainPct" 
+                <label htmlFor="benefits-productivity" className="text-label block mb-2">Productivity Gain (%)</label>
+                <input
+                  id="benefits-productivity"
+                  type="number"
+                  name="productivityGainPct"
                   value={form.productivityGainPct} 
                   onChange={handleInputChange} 
                   className="input-base" 
@@ -177,16 +184,17 @@ export default function BenefitsFormPage() {
             </div>
 
             <div>
-              <label className="text-label block mb-2">Operational Description <span className="text-rose-600">* (min 50 chars)</span></label>
-              <textarea 
-                name="operationalDescription" 
+              <label htmlFor="benefits-operational-description" className="text-label block mb-2">Operational Description <span className="text-error-text">* (min 50 chars)</span></label>
+              <textarea
+                id="benefits-operational-description"
+                name="operationalDescription"
                 rows={4} 
                 value={form.operationalDescription} 
                 onChange={handleInputChange} 
                 className="input-base resize-y"
                 placeholder="Explain the process improvements and operational impact achieved..."
               />
-              <p className={`text-xs mt-1 ${form.operationalDescription.trim().length < 50 ? 'text-theme-text0' : 'text-emerald-500'}`}>
+              <p className={`text-xs mt-1 ${form.operationalDescription.trim().length < 50 ? 'text-theme-text0' : 'text-success-text'}`}>
                 {form.operationalDescription.trim().length}/50 characters
               </p>
             </div>
@@ -197,14 +205,15 @@ export default function BenefitsFormPage() {
             <h3 className="text-lg font-semibold text-theme-text border-b border-theme-border/50 pb-2">Strategic Rating</h3>
             
             <div>
-              <label className="text-label block mb-2">Innovation Impact Rating (1 - 10)</label>
-              <input 
-                type="range" 
-                name="innovationImpactRating" 
+              <label htmlFor="benefits-innovation-rating" className="text-label block mb-2">Innovation Impact Rating (1 - 10)</label>
+              <input
+                id="benefits-innovation-rating"
+                type="range"
+                name="innovationImpactRating"
                 min="1" max="10" 
                 value={form.innovationImpactRating} 
                 onChange={handleInputChange} 
-                className="w-full accent-theme-accent h-2 bg-theme-surface rounded-lg appearance-none cursor-pointer"
+                className="range"
               />
               <div className="text-right text-sm font-bold text-theme-accent mt-1">
                 {form.innovationImpactRating} / 10
@@ -214,7 +223,7 @@ export default function BenefitsFormPage() {
 
           <div className="flex justify-end pt-4 border-t border-theme-border/50">
             <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Submitting...' : <><CheckCircle2 className="w-4 h-4" /> Submit Benefits Record</>}
+              {mutation.isPending ? 'Submitting...' : <><CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Submit Benefits Record</>}
             </button>
           </div>
         </form>

@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="IdeaHub — MPOnline's Enterprise Innovation & Ideation Management Platform. Submit ideas, track innovation, drive change." />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#F8F9FC" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0B0F1A" media="(prefers-color-scheme: dark)" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>IdeaHub — Innovation Platform</title>
-    <!-- Preconnect to Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <!--
+      No external font/stylesheet links. The server CSP is style-src 'self' and
+      font-src 'self' (server/middleware/securityHeaders.js), so Google Fonts would
+      be blocked in any deployment served through Express and produce console CSP
+      errors. Typography uses the platform UI font stack (see index.css).
+    -->
   </head>
   <body class="antialiased">
     <script>

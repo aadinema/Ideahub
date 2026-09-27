@@ -1,12 +1,20 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { eventsAPI } from '../../api';
 import { EVENT_TYPE, EVENT_STATUS } from '@shared/constants';
 import { Calendar, Users, Target, ArrowRightCircle, CheckCircle2, Lock, Compass } from 'lucide-react';
+import ErrorState from '../../components/ErrorState';
+import EmptyState from '../../components/EmptyState';
+import usePageTitle from '../../hooks/usePageTitle';
 import { useSelector } from 'react-redux';
 
 const TYPE_LABEL = (t = '') => t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+const VIEW_TABS = [
+  { id: 'explore', label: 'Explore Events' },
+  { id: 'mine', label: 'My Events' },
+];
 
 /* Multi-select filter (FR-IE-04) — checkbox list inside an expandable <details>. */
 function FilterMulti({ label, options, selected, onChange }) {
@@ -17,7 +25,7 @@ function FilterMulti({ label, options, selected, onChange }) {
     <details className="group">
       <summary className="cursor-pointer list-none flex items-center justify-between text-xs font-semibold text-theme-text0 uppercase tracking-wider">
         <span>{label}</span>
-        <span className="text-[10px] text-theme-accent normal-case">
+        <span className="text-[11px] text-theme-accent normal-case">
           {selected.length ? `${selected.length} selected` : 'Any'}
         </span>
       </summary>
@@ -27,7 +35,7 @@ function FilterMulti({ label, options, selected, onChange }) {
         ) : (
           options.map((o) => (
             <label key={o} className="flex items-center gap-2 text-sm text-theme-text/90 cursor-pointer">
-              <input type="checkbox" checked={selected.includes(o)} onChange={() => toggle(o)} />
+              <input type="checkbox" className="accent-theme-accent h-4 w-4" checked={selected.includes(o)} onChange={() => toggle(o)} />
               {TYPE_LABEL(o)}
             </label>
           ))
@@ -49,15 +57,15 @@ function EventCard({ event, currentUser, onJoin, joining, onOpen }) {
     <div className="glass glass-hover rounded-2xl p-6 flex flex-col transition-colors group">
       <div className="flex justify-between items-start mb-4">
         <div className="flex gap-2">
-          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
-            event.status === EVENT_STATUS.ACTIVE ? 'bg-emerald-500/20 text-emerald-600' :
-            event.status === EVENT_STATUS.EXTENDED ? 'bg-blue-500/20 text-blue-600' :
+          <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${
+            event.status === EVENT_STATUS.ACTIVE ? 'bg-success/20 text-success-text' :
+            event.status === EVENT_STATUS.EXTENDED ? 'bg-info-light text-info-text' :
             'bg-theme-border/50 text-theme-text0'
           }`}>
             {event.status}
           </span>
           {event.visibility === 'restricted' && (
-            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-rose-500/20 text-rose-600 flex items-center gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-error/20 text-error-text flex items-center gap-1">
               <Lock className="w-3 h-3" /> Restricted
             </span>
           )}
@@ -93,7 +101,7 @@ function EventCard({ event, currentUser, onJoin, joining, onOpen }) {
           <button
             onClick={() => onJoin(event._id)}
             disabled={isJoined || joining}
-            className={`btn flex-1 ${isJoined ? 'btn-secondary !text-emerald-600 cursor-not-allowed' : 'btn-primary'}`}
+            className={`btn flex-1 ${isJoined ? 'btn-secondary !text-success-text cursor-not-allowed' : 'btn-primary'}`}
           >
             {isJoined ? (
               <><CheckCircle2 className="w-4 h-4" /> Joined</>
@@ -108,6 +116,7 @@ function EventCard({ event, currentUser, onJoin, joining, onOpen }) {
 }
 
 export default function EventsExplorePage() {
+  usePageTitle("Ideathon Events");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const currentUser = useSelector((state) => state.auth.user);
@@ -115,6 +124,21 @@ export default function EventsExplorePage() {
   const [view, setView] = useState('explore'); // 'explore' | 'mine'
   const [filters, setFilters] = useState({ status: EVENT_STATUS.ACTIVE, types: [], initiatives: [], categories: [] });
   const [successMsg, setSuccessMsg] = useState('');
+  const viewTabRefs = useRef([]);
+
+  // Roving tabindex + arrow keys for the Explore/My Events tablist.
+  const onViewTabKeyDown = (e, idx) => {
+    const last = VIEW_TABS.length - 1;
+    let next = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = idx === last ? 0 : idx + 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = idx === 0 ? last : idx - 1;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = last;
+    if (next === null) return;
+    e.preventDefault();
+    setView(VIEW_TABS[next].id);
+    viewTabRefs.current[next]?.focus();
+  };
 
   const exploreParams = {
     status: filters.status || undefined,
@@ -123,13 +147,13 @@ export default function EventsExplorePage() {
     category: filters.categories.join(',') || undefined,
   };
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data: events = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['exploreEvents', exploreParams],
     queryFn: () => eventsAPI.explore(exploreParams).then((r) => r.data.data),
     enabled: view === 'explore',
   });
 
-  const { data: myEvents = [], isLoading: mineLoading } = useQuery({
+  const { data: myEvents = [], isLoading: mineLoading, isError: mineError, refetch: refetchMine } = useQuery({
     queryKey: ['myEvents'],
     queryFn: () => eventsAPI.mine().then((r) => r.data.data),
     enabled: view === 'mine',
@@ -154,6 +178,8 @@ export default function EventsExplorePage() {
 
   const list = view === 'explore' ? events : myEvents;
   const loading = view === 'explore' ? isLoading : mineLoading;
+  const errored = view === 'explore' ? isError : mineError;
+  const refetchList = view === 'explore' ? refetch : refetchMine;
 
   return (
     <div className="page-enter max-w-[1200px] mx-auto pb-12">
@@ -165,22 +191,24 @@ export default function EventsExplorePage() {
       </div>
 
       {successMsg && (
-        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 rounded-xl flex items-center gap-3">
+        <div className="mb-6 p-4 bg-success-light border border-success/30 text-success-text rounded-xl flex items-center gap-3">
           <CheckCircle2 className="w-5 h-5 shrink-0" />
           <p>{successMsg}</p>
         </div>
       )}
 
       {/* ── Explore / My Events (FR-IE-03) ── */}
-      <div className="flex gap-1 border-b border-theme-border mb-6" role="tablist">
-        {[
-          { id: 'explore', label: 'Explore Events' },
-          { id: 'mine', label: 'My Events' },
-        ].map((t) => (
+      <div className="flex gap-1 border-b border-theme-border mb-6" role="tablist" aria-label="Event views">
+        {VIEW_TABS.map((t, i) => (
           <button
             key={t.id}
+            ref={(el) => { viewTabRefs.current[i] = el; }}
             role="tab"
+            id={`event-tab-${t.id}`}
+            aria-controls="event-panel"
             aria-selected={view === t.id}
+            tabIndex={view === t.id ? 0 : -1}
+            onKeyDown={(e) => onViewTabKeyDown(e, i)}
             onClick={() => setView(t.id)}
             className={`pb-3 pt-1 px-4 font-semibold text-sm relative transition-colors ${
               view === t.id ? 'text-theme-accent' : 'text-theme-text/80 hover:text-theme-text'
@@ -192,15 +220,16 @@ export default function EventsExplorePage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6" role="tabpanel" id="event-panel" aria-labelledby={`event-tab-${view}`}>
         {/* Sidebar Filters */}
         <div className="space-y-6">
           <div className="glass rounded-2xl p-5">
             <h3 className="text-label mb-4">Filters</h3>
             <div className="space-y-5">
               <div>
-                <label className="text-xs font-semibold text-theme-text0 uppercase tracking-wider mb-2 block">Status</label>
+                <label htmlFor="events-status-filter" className="text-xs font-semibold text-theme-text0 uppercase tracking-wider mb-2 block">Status</label>
                 <select
+                  id="events-status-filter"
                   value={filters.status}
                   onChange={(e) => setFilters({ ...filters, status: e.target.value })}
                   className="input-base"
@@ -239,21 +268,22 @@ export default function EventsExplorePage() {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="glass rounded-2xl h-64 animate-pulse" />
+                <div key={i} className="rounded-2xl h-64 skeleton" />
               ))}
             </div>
+          ) : errored ? (
+            <ErrorState
+              title="Couldn't load events"
+              message="The event list didn't load. Check your connection and try again."
+              onRetry={() => refetchList()}
+            />
           ) : list.length === 0 ? (
-            <div className="glass rounded-2xl p-16 text-center">
-              {view === 'mine'
-                ? <Compass className="w-12 h-12 text-theme-text/60 mx-auto mb-4" />
-                : <Calendar className="w-12 h-12 text-theme-text/60 mx-auto mb-4" />}
-              <h3 className="text-lg font-semibold text-theme-text/80">
-                {view === 'mine' ? 'You have not joined any events yet' : 'No events found'}
-              </h3>
-              <p className="text-sm text-theme-text0 mt-1">
-                {view === 'mine' ? 'Browse the Explore tab and register for an event.' : 'Try adjusting your filters.'}
-              </p>
-            </div>
+            <EmptyState
+              icon={view === 'mine' ? Compass : Calendar}
+              title={view === 'mine' ? 'You have not joined any events yet' : 'No events found'}
+              message={view === 'mine' ? 'Browse the Explore tab and register for an event.' : 'Try adjusting your filters.'}
+              className="glass rounded-2xl"
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {list.map((event) => (

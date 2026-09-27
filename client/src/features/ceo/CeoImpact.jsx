@@ -18,7 +18,7 @@ export function BusinessImpactPanel({ impact, definitions = {}, loading }) {
       value: hasEstimates ? impact.potentialINR : null,
       definition: definitions.potentialValue,
       hint: 'Submitter estimates across ideas in period',
-      color: '#818CF8',
+      color: 'var(--color-theme-accent-hover)',
     },
     {
       key: 'approved',
@@ -26,7 +26,7 @@ export function BusinessImpactPanel({ impact, definitions = {}, loading }) {
       value: hasEstimates ? impact.approvedINR : null,
       definition: definitions.approvedValue,
       hint: 'Estimates on ideas that passed committee approval',
-      color: '#a78bfa',
+      color: 'var(--purple-hover)',
     },
     {
       key: 'realized',
@@ -79,7 +79,7 @@ export function BusinessImpactPanel({ impact, definitions = {}, loading }) {
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-theme-text0 mt-0.5">{row.hint}</p>
+                <p className="text-[11px] text-theme-text0 mt-0.5">{row.hint}</p>
               </div>
             ))}
           </div>
@@ -161,21 +161,21 @@ export function ParticipationPanel({ participation, definitions = {}, loading })
 
           <dl className="grid grid-cols-2 gap-x-3 gap-y-2.5">
             <div className="glass rounded-lg p-2.5">
-              <dt className="text-[10px] uppercase tracking-wider text-theme-text0">First-time contributors</dt>
+              <dt className="text-[11px] uppercase tracking-wider text-theme-text0">First-time contributors</dt>
               <dd className="text-base font-bold text-theme-text mt-0.5">{formatNum(p.firstTimeContributors)}</dd>
-              <p className="text-[10px] text-theme-text0">no ideas before this period</p>
+              <p className="text-[11px] text-theme-text0">no ideas before this period</p>
             </div>
             <div className="glass rounded-lg p-2.5">
-              <dt className="text-[10px] uppercase tracking-wider text-theme-text0">Repeat contributors</dt>
+              <dt className="text-[11px] uppercase tracking-wider text-theme-text0">Repeat contributors</dt>
               <dd className="text-base font-bold text-theme-text mt-0.5">{formatNum(p.repeatContributors)}</dd>
-              <p className="text-[10px] text-theme-text0">2+ ideas this period</p>
+              <p className="text-[11px] text-theme-text0">2+ ideas this period</p>
             </div>
             <div className="glass rounded-lg p-2.5">
-              <dt className="text-[10px] uppercase tracking-wider text-theme-text0">Ideas per employee</dt>
+              <dt className="text-[11px] uppercase tracking-wider text-theme-text0">Ideas per employee</dt>
               <dd className="text-base font-bold text-theme-text mt-0.5">{formatNum(p.ideasPerEmployee)}</dd>
             </div>
             <div className="glass rounded-lg p-2.5">
-              <dt className="text-[10px] uppercase tracking-wider text-theme-text0 flex items-center gap-1">
+              <dt className="text-[11px] uppercase tracking-wider text-theme-text0 flex items-center gap-1">
                 Active employees <InfoTip text="Users with isActive = true in IdeaHub." label="Eligible employees" />
               </dt>
               <dd className="text-base font-bold text-theme-text mt-0.5">{formatNum(p.eligibleEmployees)}</dd>

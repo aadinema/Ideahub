@@ -35,17 +35,22 @@ const createMockQueryClient = () => new QueryClient({
   },
 });
 
-const renderWithProviders = (component, { initialAuth = null } = {}) => {
+const renderWithProviders = (component, { initialAuth = null, withRouter = false } = {}) => {
   const store = createMockStore(initialAuth);
   const queryClient = createMockQueryClient();
+
+  // `<App/>` provides its own <BrowserRouter>; wrapping it again throws
+  // "You cannot render a <Router> inside another <Router>" (see KI-012).
+  // Only wrap when the component under test needs a router but doesn't supply one.
+  const tree = withRouter
+    ? <BrowserRouter>{component}</BrowserRouter>
+    : component;
 
   return {
     ...render(
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            {component}
-          </BrowserRouter>
+          {tree}
         </QueryClientProvider>
       </Provider>
     ),

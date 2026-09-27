@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useDispatch } from 'react-redux'
 import { setCredentials } from '../../store/authSlice'
 import { authAPI } from '../../api'
+import usePageTitle from '../../hooks/usePageTitle';
 import { Zap, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 const DEMO_USERS = [
@@ -17,6 +18,7 @@ const DEMO_USERS = [
 ]
 
 export default function LoginPage() {
+  usePageTitle('Sign in');
   const [form, setForm]           = useState({ email: '', password: '' })
   const [showPass, setShowPass]   = useState(false)
   const [loading, setLoading]     = useState(false)
@@ -74,10 +76,11 @@ export default function LoginPage() {
 
           {import.meta.env.DEV && (
             <div className="mb-6 p-4 rounded-xl bg-theme-accent/10 border border-theme-accent/20">
-              <label className="text-xs font-semibold text-theme-accent block mb-2 uppercase tracking-wider">
+              <label htmlFor="dev-quick-login" className="text-xs font-semibold text-theme-accent block mb-2 uppercase tracking-wider">
                 Dev Mode: Quick Login
               </label>
               <select
+                id="dev-quick-login"
                 className="input-base text-sm"
                 onChange={(e) => {
                   if (!e.target.value) return;
@@ -96,8 +99,8 @@ export default function LoginPage() {
 
           {/* Session expired notice */}
           {isExpired && (
-            <div className="mb-5 flex items-start gap-2 p-3 rounded-lg bg-theme-accent/10 border border-amber-500/25 text-theme-accent text-sm">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <div role="status" className="mb-5 flex items-start gap-2 p-3 rounded-lg bg-warning-light border border-warning/30 text-warning-text text-sm">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <span>Your session expired. Please sign in again.</span>
             </div>
           )}
@@ -107,9 +110,9 @@ export default function LoginPage() {
             <div
               id="login-error"
               role="alert"
-              className="mb-5 flex items-start gap-2 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm"
+              className="mb-5 flex items-start gap-2 p-3 rounded-lg bg-error-light border border-error/20 text-error-text text-sm"
             >
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
@@ -159,7 +162,6 @@ export default function LoginPage() {
                   onClick={() => setShowPass((v) => !v)}
                   aria-label={showPass ? 'Hide password' : 'Show password'}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-text0 hover:text-theme-text/80 transition-colors"
-                  tabIndex={-1}
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

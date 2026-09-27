@@ -39,7 +39,7 @@ export default function CeoDepartments({ departments = [], definitions = {}, loa
           <div className="hidden md:block overflow-x-auto -mx-1">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-theme-text0 border-b border-theme-border/60">
+                <tr className="text-[11px] uppercase tracking-wider text-theme-text0 border-b border-theme-border/60">
                   <th className="px-3 pb-2 font-semibold">Department</th>
                   <th className="px-3 pb-2 font-semibold">Ideas</th>
                   <th className="px-3 pb-2 font-semibold" title="Distinct submitters ÷ active employees">Participation</th>
@@ -58,7 +58,7 @@ export default function CeoDepartments({ departments = [], definitions = {}, loa
                       onClick={() => drill(d)}
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === 'Enter') drill(d) }}
-                      className={`border-b border-theme-border/40 last:border-0 cursor-pointer transition-colors
+                      className={`group border-b border-theme-border/40 last:border-0 cursor-pointer transition-colors
                                   hover:bg-theme-surface/60 focus-visible:outline-2 focus-visible:outline-[var(--primary)]
                                   ${isSel ? 'bg-theme-accent/5' : ''}`}
                       aria-label={`${d.department}: ${d.ideas} ideas. Show ideas.`}
@@ -69,7 +69,7 @@ export default function CeoDepartments({ departments = [], definitions = {}, loa
                           {isSel && <span className="text-[9px] uppercase font-bold text-theme-accent">filter</span>}
                         </span>
                         {d.employees === 0 && (
-                          <span className="block text-[10px] text-amber-500/90 mt-0.5" title="No active users are assigned to this department name — participation cannot be computed.">
+                          <span className="block text-[11px] text-warning-text/90 mt-0.5" title="No active users are assigned to this department name — participation cannot be computed.">
                             no employees matched
                           </span>
                         )}
@@ -84,13 +84,13 @@ export default function CeoDepartments({ departments = [], definitions = {}, loa
                       </Cell>
                       <Cell className="tabular-nums">
                         {formatPct(d.participationRate)}
-                        <span className="text-[10px] text-theme-text0 ml-1">{formatNum(d.participants)}/{formatNum(d.employees)}</span>
+                        <span className="text-[11px] text-theme-text0 ml-1">{formatNum(d.participants)}/{formatNum(d.employees)}</span>
                       </Cell>
                       <Cell className="tabular-nums">
-                        {formatNum(d.approved)}<span className="text-[10px] text-theme-text0 ml-1">{formatPct(d.approvalRate)}</span>
+                        {formatNum(d.approved)}<span className="text-[11px] text-theme-text0 ml-1">{formatPct(d.approvalRate)}</span>
                       </Cell>
                       <Cell className="tabular-nums">
-                        {formatNum(d.implemented)}<span className="text-[10px] text-theme-text0 ml-1">{formatPct(d.implementationRate)}</span>
+                        {formatNum(d.implemented)}<span className="text-[11px] text-theme-text0 ml-1">{formatPct(d.implementationRate)}</span>
                       </Cell>
                       <Cell className="text-right tabular-nums font-medium text-theme-text">{formatINR(d.realizedINR)}</Cell>
                       <Cell className="text-right">

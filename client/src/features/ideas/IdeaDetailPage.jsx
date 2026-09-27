@@ -8,6 +8,7 @@ import { ideasAPI } from '../../api'
 import useRole from '../../hooks/useRole'
 import IdeaStatusBadge from '../../components/IdeaStatusBadge'
 import RichText from '../../components/RichText'
+import usePageTitle from '../../hooks/usePageTitle';
 import {
   Calendar, ArrowLeft, Download, FileText, CheckCircle2,
   Clock, AlertCircle, Edit, Play
@@ -33,11 +34,15 @@ export default function IdeaDetailPage() {
     },
   })
 
+  // Title depends on fetched data, so it is set here — after `data` exists and
+  // before any early return (rules of hooks: must run unconditionally).
+  usePageTitle(data?.title)
+
   if (isLoading) {
     return (
       <div className="page-enter max-w-[900px] mx-auto space-y-4">
-        <div className="h-8 w-1/3 bg-theme-surface rounded animate-pulse mb-8" />
-        <div className="glass rounded-xl p-8 h-[400px] animate-pulse bg-theme-surface/50" />
+        <div className="h-8 w-1/3 skeleton rounded mb-8" />
+        <div className="h-[400px] skeleton rounded-xl" />
       </div>
     )
   }
@@ -45,7 +50,7 @@ export default function IdeaDetailPage() {
   if (isError || !data) {
     return (
       <div className="page-enter max-w-[900px] mx-auto text-center py-20">
-        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
+        <AlertCircle className="w-12 h-12 text-error mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-theme-text mb-2">Idea Not Found</h2>
         <p className="text-theme-text/80 mb-6">This idea doesn't exist or you don't have access to view it.</p>
         <button onClick={() => navigate('/ideas')} className="btn btn-secondary">
@@ -172,7 +177,7 @@ export default function IdeaDetailPage() {
                   <dt className="text-theme-text0 mb-0.5">Estimated Value</dt>
                   <dd className="text-theme-text" title="Submitter's estimate — not a realized financial result">
                     ₹{idea.estimatedValueINR.toLocaleString('en-IN')}
-                    <span className="text-[10px] text-theme-text0 ml-1.5">estimated</span>
+                    <span className="text-[11px] text-theme-text0 ml-1.5">estimated</span>
                   </dd>
                 </div>
               )}
@@ -189,7 +194,7 @@ export default function IdeaDetailPage() {
                 <dt className="text-theme-text0 mb-1">Expected Benefits</dt>
                 <dd className="flex flex-wrap gap-1">
                   {idea.benefitTypes?.map((b) => (
-                    <span key={b} className="px-2 py-1 rounded-md bg-theme-accent/10 text-theme-accent text-[10px] uppercase tracking-wider">
+                    <span key={b} className="px-2 py-1 rounded-md bg-theme-accent/10 text-theme-accent text-[11px] uppercase tracking-wider">
                       {b.replace(/_/g, ' ')}
                     </span>
                   ))}
@@ -240,11 +245,11 @@ export default function IdeaDetailPage() {
                   <p className="text-xs font-semibold text-theme-text capitalize">
                     {hist.status.replace(/_/g, ' ')}
                   </p>
-                  <p className="text-[10px] text-theme-text0 flex items-center gap-1 mt-0.5">
+                  <p className="text-[11px] text-theme-text0 flex items-center gap-1 mt-0.5">
                     <Clock className="w-3 h-3" />
                     {new Date(hist.timestamp).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' })}
                   </p>
-                  <p className="text-[10px] text-theme-text/80 mt-0.5">
+                  <p className="text-[11px] text-theme-text/80 mt-0.5">
                     By: {hist.actor?.name || 'System'}
                   </p>
                   {hist.comment && (

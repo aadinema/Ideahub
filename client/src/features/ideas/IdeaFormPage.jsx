@@ -28,6 +28,7 @@ import {
   EVENT_STATUS,
 } from '@shared/constants'
 import RichTextEditor from '../../components/RichTextEditor'
+import usePageTitle from '../../hooks/usePageTitle';
 import { AlertCircle, CheckCircle2, Info, Upload, X, Lightbulb, ChevronRight, Save } from 'lucide-react'
 
 // Human labels for the 8 canonical benefit types (single source of truth).
@@ -105,11 +106,30 @@ export default function IdeaFormPage() {
   const [fileError, setFileError]     = useState('')
   const [globalError, setGlobalError] = useState('')
   const [success, setSuccess]         = useState(false)
+  const sectionTabRefs = useRef([])
+
+  // Roving tabindex + arrow keys for the section tablist (WAI-ARIA tabs pattern).
+  const onSectionTabKeyDown = (e, idx) => {
+    const last = SECTIONS.length - 1
+    let next = null
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = idx === last ? 0 : idx + 1
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = idx === 0 ? last : idx - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = last
+    if (next === null) return
+    e.preventDefault()
+    setSection(SECTIONS[next].id)
+    sectionTabRefs.current[next]?.focus()
+  }
 
   // Draft id: starts as the route param; a new idea acquires one on first save.
   const [draftId, setDraftId] = useState(editId || null)
   const isEdit = !!editId
   const dirtyRef = useRef(false)
+
+  // `editId` is defined above, so this hook call is safe (was previously
+  // called before its declaration, throwing a TDZ ReferenceError).
+  usePageTitle(isEdit ? 'Edit Idea' : 'Submit Idea')
 
   // ── Load existing idea for edit ──
   const { data: existingIdea } = useQuery({
@@ -120,7 +140,7 @@ export default function IdeaFormPage() {
   })
 
   // ── Active events for the linking selector (FR-02-07) ──
-  const { data: activeEvents = [] } = useQuery({
+  const { data: activeEvents = [], isError: eventsError, refetch: refetchEvents } = useQuery({
     queryKey: ['activeEventsForLink'],
     queryFn: () => eventsAPI.explore({ status: EVENT_STATUS.ACTIVE }).then((r) => r.data.data),
   })
@@ -347,8 +367,8 @@ export default function IdeaFormPage() {
   if (success) {
     return (
       <div className="page-enter flex flex-col items-center justify-center min-h-[60vh] gap-6">
-        <div className="w-20 h-20 rounded-full bg-emerald-400/15 flex items-center justify-center">
-          <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+        <div className="w-20 h-20 rounded-full bg-success-light flex items-center justify-center">
+          <CheckCircle2 className="w-10 h-10 text-success" />
         </div>
         <div className="text-center">
           <h2 className="text-display text-2xl text-theme-text mb-2">Idea Submitted!</h2>
@@ -366,7 +386,7 @@ export default function IdeaFormPage() {
         <ChevronRight className="w-3 h-3" />
         <span className="text-theme-text/80">{isEdit ? 'Edit Idea' : 'Submit New Idea'}</span>
         {lastSaved && (
-          <span className="ml-auto text-xs text-emerald-600 flex items-center gap-1">
+          <span className="ml-auto text-xs text-success-text flex items-center gap-1">
             <Save className="w-3 h-3" />
             Auto-saved {lastSaved.toLocaleTimeString()}
           </span>
@@ -379,10 +399,10 @@ export default function IdeaFormPage() {
 
       {/* ── Duplicate warning (FR-02-06) ── */}
       {duplicates.length > 0 && !dupDismissed && (
-        <div className="mb-6 p-4 rounded-xl bg-theme-accent/10 border border-amber-500/25 flex items-start gap-3">
+        <div className="mb-6 p-4 rounded-xl bg-theme-accent/10 border border-warning/25 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-theme-accent flex-shrink-0 mt-0.5" />
           <div className="flex-1">
-            <p className="text-sm font-semibold text-amber-700 mb-1">
+            <p className="text-sm font-semibold text-warning-text mb-1">
               Similar ideas may already exist — please review before submitting.
             </p>
             <ul className="text-xs text-theme-text0 space-y-1">
@@ -395,7 +415,7 @@ export default function IdeaFormPage() {
           <button
             onClick={() => setDupDismissed(true)}
             aria-label="Dismiss duplicate warning"
-            className="text-amber-600 hover:text-amber-500"
+            className="text-warning-text hover:text-warning-text"
           >
             <X className="w-4 h-4" />
           </button>
@@ -404,15 +424,15 @@ export default function IdeaFormPage() {
 
       {/* ── Global error ── */}
       {globalError && (
-        <div role="alert" className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-start gap-3 text-rose-600 text-sm">
+        <div role="alert" className="mb-6 p-4 rounded-xl bg-error-light border border-error/20 flex items-start gap-3 text-error-text text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           {globalError}
         </div>
       )}
 
       {/* ── Section tabs ── */}
-      <div className="flex gap-1 mb-8 overflow-x-auto pb-1" role="tablist">
-        {SECTIONS.map((s) => {
+      <div className="flex gap-1 mb-8 overflow-x-auto pb-1" role="tablist" aria-label="Idea form sections">
+        {SECTIONS.map((s, i) => {
           const hasError = (
             (s.id === 'basic' && (errors.title || errors.category || errors.department)) ||
             (s.id === 'description' && errors.problemStatement) ||
@@ -421,23 +441,28 @@ export default function IdeaFormPage() {
           return (
             <button
               key={s.id}
+              ref={(el) => { sectionTabRefs.current[i] = el; }}
               role="tab"
               id={`tab-${s.id}`}
+              aria-controls={`panel-${s.id}`}
               aria-selected={activeSection === s.id}
+              tabIndex={activeSection === s.id ? 0 : -1}
+              onKeyDown={(e) => onSectionTabKeyDown(e, i)}
               onClick={() => setSection(s.id)}
               className={`btn btn-sm flex-shrink-0 relative ${activeSection === s.id ? 'btn-primary' : 'btn-secondary'}`}
             >
-              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{ background: activeSection === s.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)' }}>
+              <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: activeSection === s.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)' }}>
                 {s.num}
               </span>
               {s.label}
-              {hasError && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500" />}
+              {hasError && <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-error" />}
             </button>
           )
         })}
       </div>
 
       <form onSubmit={handleSubmit} noValidate encType="multipart/form-data">
+        <div role="tabpanel" id={`panel-${activeSection}`} aria-labelledby={`tab-${activeSection}`}>
         {/* ── Section 1: Basic Info ── */}
         {activeSection === 'basic' && (
           <div className="glass rounded-2xl p-6 space-y-5">
@@ -446,20 +471,20 @@ export default function IdeaFormPage() {
             {/* Title */}
             <div>
               <label htmlFor="idea-title" className="text-label block mb-2">
-                Idea Title <span className="text-rose-500">*</span>
+                Idea Title <span className="text-error-text">*</span>
               </label>
               <input
                 id="idea-title"
                 type="text"
                 value={form.title}
                 onChange={(e) => handleChange('title', e.target.value)}
-                className={`input-base ${errors.title ? 'border-rose-500/60' : ''}`}
+                className={`input-base ${errors.title ? 'border-error/60' : ''}`}
                 placeholder="Concise, descriptive title for your idea"
                 maxLength={300}
                 aria-required="true"
                 aria-describedby={errors.title ? 'err-title' : undefined}
               />
-              {errors.title && <p id="err-title" role="alert" className="text-xs text-rose-500 mt-1">{errors.title}</p>}
+              {errors.title && <p id="err-title" role="alert" className="text-xs text-error-text mt-1">{errors.title}</p>}
               <p className="text-xs text-theme-text0 mt-1">{form.title.length}/300</p>
             </div>
 
@@ -467,7 +492,7 @@ export default function IdeaFormPage() {
               {/* Category */}
               <div>
                 <label htmlFor="idea-category" className="text-label block mb-2">
-                  Category <span className="text-rose-500">*</span>
+                  Category <span className="text-error-text">*</span>
                 </label>
                 <input
                   id="idea-category"
@@ -475,14 +500,14 @@ export default function IdeaFormPage() {
                   list="categories-list"
                   value={form.category}
                   onChange={(e) => handleChange('category', e.target.value)}
-                  className={`input-base ${errors.category ? 'border-rose-500/60' : ''}`}
+                  className={`input-base ${errors.category ? 'border-error/60' : ''}`}
                   placeholder="e.g. Technology & Innovation"
                   aria-required="true"
                 />
                 <datalist id="categories-list">
                   {['Technology & Innovation','Process Improvement','Cost Optimization','Customer Experience','Employee Experience','Compliance & Risk','Business Development'].map(c => <option key={c} value={c} />)}
                 </datalist>
-                {errors.category && <p role="alert" className="text-xs text-rose-500 mt-1">{errors.category}</p>}
+                {errors.category && <p role="alert" className="text-xs text-error-text mt-1">{errors.category}</p>}
               </div>
               {/* Idea Type */}
               <div>
@@ -501,18 +526,18 @@ export default function IdeaFormPage() {
               {/* Department */}
               <div>
                 <label htmlFor="idea-dept" className="text-label block mb-2">
-                  Department <span className="text-rose-500">*</span>
+                  Department <span className="text-error-text">*</span>
                 </label>
                 <input
                   id="idea-dept"
                   type="text"
                   value={form.department}
                   onChange={(e) => handleChange('department', e.target.value)}
-                  className={`input-base ${errors.department ? 'border-rose-500/60' : ''}`}
+                  className={`input-base ${errors.department ? 'border-error/60' : ''}`}
                   placeholder="Your department"
                   aria-required="true"
                 />
-                {errors.department && <p role="alert" className="text-xs text-rose-500 mt-1">{errors.department}</p>}
+                {errors.department && <p role="alert" className="text-xs text-error-text mt-1">{errors.department}</p>}
               </div>
               {/* Initiative */}
               <div>
@@ -566,17 +591,18 @@ export default function IdeaFormPage() {
               return (
                 <div key={field}>
                   <label className="text-label block mb-2">
-                    {label} {required && <span className="text-rose-500">*</span>}
+                    {label} {required && <span className="text-error-text">*</span>}
                   </label>
                   <RichTextEditor
                     id={`idea-${field}`}
+                    ariaLabel={label}
                     value={form[field]}
                     onChange={(html) => handleChange(field, html)}
                     placeholder={hint}
                   />
-                  {errors[field] && <p role="alert" className="text-xs text-rose-500 mt-1">{errors[field]}</p>}
+                  {errors[field] && <p role="alert" className="text-xs text-error-text mt-1">{errors[field]}</p>}
                   {minLen && (
-                    <p className={`text-xs mt-1 ${plainLen < minLen ? 'text-theme-text0' : 'text-emerald-600'}`}>
+                    <p className={`text-xs mt-1 ${plainLen < minLen ? 'text-theme-text0' : 'text-success-text'}`}>
                       {plainLen}/{minLen} min characters
                     </p>
                   )}
@@ -590,7 +616,7 @@ export default function IdeaFormPage() {
         {activeSection === 'benefits' && (
           <div className="glass rounded-2xl p-6">
             <h2 className="text-heading text-base text-theme-text mb-1">3. Expected Benefits</h2>
-            <p className="text-sm text-theme-text0 mb-6">Select at least one benefit type (FR-02-03) <span className="text-rose-500">*</span></p>
+            <p className="text-sm text-theme-text0 mb-6">Select at least one benefit type (FR-02-03) <span className="text-error-text">*</span></p>
             <div
               role="group"
               aria-label="Benefit types"
@@ -624,7 +650,7 @@ export default function IdeaFormPage() {
               })}
             </div>
             {errors.benefitTypes && (
-              <p role="alert" className="text-xs text-rose-500 mt-4 flex items-center gap-1">
+              <p role="alert" className="text-xs text-error-text mt-4 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {errors.benefitTypes}
               </p>
             )}
@@ -646,14 +672,14 @@ export default function IdeaFormPage() {
                 placeholder="e.g. 250000"
                 aria-describedby="idea-estimatedValueINR-hint"
                 aria-invalid={errors.estimatedValueINR ? 'true' : undefined}
-                className={`input-base ${errors.estimatedValueINR ? 'border-rose-500/60' : ''}`}
+                className={`input-base ${errors.estimatedValueINR ? 'border-error/60' : ''}`}
               />
               <p id="idea-estimatedValueINR-hint" className="text-xs text-theme-text0 mt-1.5">
                 Optional · Your best estimate of annual value. Executives compare this
                 against realized benefits recorded after implementation.
               </p>
               {errors.estimatedValueINR && (
-                <p role="alert" className="text-xs text-rose-500 mt-1">{errors.estimatedValueINR}</p>
+                <p role="alert" className="text-xs text-error-text mt-1">{errors.estimatedValueINR}</p>
               )}
             </div>
           </div>
@@ -667,7 +693,7 @@ export default function IdeaFormPage() {
 
             <label
               htmlFor="idea-attachments"
-              className="flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed border-theme-border hover:border-theme-accent/40 hover:bg-theme-accent/5 cursor-pointer transition-all group"
+              className="flex flex-col items-center gap-4 p-8 rounded-xl border-2 border-dashed border-theme-border hover:border-theme-accent/40 hover:bg-theme-accent/5 cursor-pointer transition-all duration-200 group"
             >
               <Upload className="w-8 h-8 text-theme-text0 group-hover:text-theme-accent transition-colors" />
               <div className="text-center">
@@ -686,7 +712,7 @@ export default function IdeaFormPage() {
             </label>
 
             {fileError && (
-              <p role="alert" className="text-xs text-rose-500 mt-3 flex items-center gap-1">
+              <p role="alert" className="text-xs text-error-text mt-3 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {fileError}
               </p>
             )}
@@ -696,7 +722,7 @@ export default function IdeaFormPage() {
                 {files.map((file, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-theme-surface/60 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded bg-theme-border flex items-center justify-center text-[10px] font-bold text-theme-text uppercase flex-shrink-0">
+                      <div className="w-8 h-8 rounded bg-theme-border flex items-center justify-center text-[11px] font-bold text-theme-text uppercase flex-shrink-0">
                         {file.name.split('.').pop()}
                       </div>
                       <span className="text-theme-text truncate">{file.name}</span>
@@ -706,7 +732,7 @@ export default function IdeaFormPage() {
                       type="button"
                       onClick={() => removeFile(idx)}
                       aria-label={`Remove ${file.name}`}
-                      className="ml-3 text-theme-text0 hover:text-rose-500 transition-colors flex-shrink-0"
+                      className="ml-3 text-theme-text0 hover:text-error transition-colors flex-shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -743,7 +769,7 @@ export default function IdeaFormPage() {
 
             {/* FR-IE-06 — post-deadline banner */}
             {eventDeadlinePassed && (
-              <div role="alert" className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 text-sm">
+              <div role="alert" className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-warning/10 border border-warning/30 text-warning-text text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
                   The linked event “{effectiveEvent.eventName}” closed on{' '}
@@ -754,7 +780,13 @@ export default function IdeaFormPage() {
               </div>
             )}
 
-            {activeEvents.length === 0 ? (
+            {eventsError ? (
+              <div className="flex items-center gap-3 p-4 rounded-xl alert-error text-sm">
+                <Info className="w-4 h-4 flex-shrink-0" />
+                <span className="flex-1">Couldn't load the list of Ideathon events.</span>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => refetchEvents()}>Retry</button>
+              </div>
+            ) : activeEvents.length === 0 ? (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-theme-accent/10 border border-theme-accent/20 text-theme-accent text-sm">
                 <Info className="w-4 h-4 flex-shrink-0" />
                 <span>No active Ideathon events available to link right now.</span>
@@ -779,6 +811,7 @@ export default function IdeaFormPage() {
             )}
           </div>
         )}
+        </div>
 
         {/* ── Navigation + Submit ── */}
         <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-6 border-t border-theme-border/50">

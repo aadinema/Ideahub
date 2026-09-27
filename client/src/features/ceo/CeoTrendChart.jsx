@@ -21,7 +21,7 @@ const TOOLTIP_STYLE = {
 }
 
 const SERIES = [
-  { key: 'submitted',  label: 'Submitted',  color: '#818CF8' },
+  { key: 'submitted',  label: 'Submitted',  color: 'var(--color-theme-accent-hover)' },
   { key: 'approved',   label: 'Approved',   color: 'var(--success)' },
   { key: 'implemented', label: 'Implemented', color: 'var(--warning)' },
 ]
@@ -96,8 +96,8 @@ export default function CeoTrendChart({ trend, definitions = {}, loading, onDril
               <ComposedChart data={series} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gradSubmitted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#818CF8" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#818CF8" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
@@ -118,7 +118,7 @@ export default function CeoTrendChart({ trend, definitions = {}, loading, onDril
                   type="monotone"
                   dataKey="submitted"
                   name="Submitted"
-                  stroke="#818CF8"
+                  stroke="var(--primary)"
                   strokeWidth={2}
                   fill="url(#gradSubmitted)"
                   isAnimationActive={!reducedMotion}
