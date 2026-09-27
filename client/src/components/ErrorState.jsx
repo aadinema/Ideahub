@@ -11,11 +11,12 @@ export default function ErrorState({
   onRetry,
   retryLabel = 'Try again',
   className = '',
+  compact = false,
 }) {
   return (
-    <div className={`state state-error ${className}`} role="alert">
+    <div className={`state state-error ${compact ? 'state-compact' : ''} ${className}`} role="alert">
       <div className="state-icon" aria-hidden="true">
-        <AlertTriangle className="w-6 h-6" />
+        <AlertTriangle className={compact ? 'w-5 h-5' : 'w-6 h-6'} />
       </div>
       <p className="state-title">{title}</p>
       {message && <p className="state-desc">{message}</p>}

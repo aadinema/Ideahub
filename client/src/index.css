@@ -632,6 +632,10 @@ body {
 }
 .state-actions { margin-top: 16px; display: flex; gap: 8px; }
 
+/* Compact variant for dense panels (e.g. inside a CEO dashboard card). */
+.state-compact { padding: 32px 16px; }
+.state-compact .state-icon { width: 44px; height: 44px; border-radius: 12px; margin-bottom: 8px; }
+
 .state-error .state-icon { background: var(--error-light); color: var(--error-text); }
 .state-empty .state-icon { background: var(--primary-light); color: var(--primary); }
 .state-empty .state-title { color: var(--text-secondary); }

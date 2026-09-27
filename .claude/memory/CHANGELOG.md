@@ -3,6 +3,19 @@
 This file logs both code changes and memory-file changes, newest first.
 Never overwrite history; append entries.
 
+## 2026-09-27 — UI/UX audit, KI-018 follow-up: component consolidation
+
+Last KI-018 item. UI-only; no logic change. `npm run build` ✓; `npm test` 19/19 ✓.
+- Shared `components/ErrorState.jsx` / `EmptyState.jsx` gained a `compact` prop
+  (`.state-compact`: 32px padding, 44px icon, `w-5` glyph) for dense panels.
+- `features/ceo/ceoUtils.jsx` no longer reimplements ErrorState/EmptyState markup —
+  it now delegates to the shared components with `compact`, keeping the
+  `{title,hint}` / `{message,onRetry}` signatures the CEO panels already use
+  (so no call-site churn). `KpiTile`/`SectionPanel`/`PanelSkeleton`/`InfoTip`
+  stay in ceoUtils as CEO-specific atoms.
+- Effect: one ErrorState/EmptyState implementation app-wide. CEO panel states keep
+  their compact density; the error/empty visuals now match the rest of the app.
+
 ## 2026-09-27 — UI/UX audit, Phase 3 (remaining screens) + Phase 4 (micro-details)
 
 Completed the per-screen pass and the micro-details sweep. UI-only; no

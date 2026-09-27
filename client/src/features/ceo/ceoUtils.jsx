@@ -5,8 +5,10 @@
  * (₹ abbreviation from DashboardPage, theme tokens from index.css).
  */
 import { useEffect, useState } from 'react'
-import { Info, AlertTriangle, Inbox } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { IDEA_STATUS_GROUPS } from '@shared/constants'
+import SharedEmptyState from '../../components/EmptyState'
+import SharedErrorState from '../../components/ErrorState'
 
 // ── Global filters (URL-driven, same approach as IdeaFormPage's eventId) ──
 export const PERIOD_OPTIONS = [
@@ -207,28 +209,15 @@ export function PanelSkeleton({ rows = 3 }) {
   )
 }
 
-/** Empty state (§25) — never show a broken/empty chart. */
+/**
+ * CEO-panel Empty/Error states — thin delegations to the shared components
+ * (compact variant) so the whole app renders one implementation. Keeps the
+ * `{ title, hint }` / `{ message, onRetry }` signatures the CEO panels use.
+ */
 export function EmptyState({ title, hint }) {
-  return (
-    <div className="py-8 text-center">
-      <Inbox className="w-7 h-7 text-theme-text0 mx-auto mb-2.5" aria-hidden="true" />
-      <p className="text-sm font-medium text-theme-text">{title}</p>
-      {hint && <p className="text-xs text-theme-text0 mt-1 max-w-sm mx-auto leading-relaxed">{hint}</p>}
-    </div>
-  )
+  return <SharedEmptyState compact title={title} message={hint} />
 }
 
-/** Error state (§27) — no stack traces, with retry. */
 export function ErrorState({ message = 'Unable to load this section.', onRetry }) {
-  return (
-    <div className="py-8 text-center" role="alert">
-      <AlertTriangle className="w-7 h-7 text-warning mx-auto mb-2.5" aria-hidden="true" />
-      <p className="text-sm font-medium text-theme-text">{message}</p>
-      {onRetry && (
-        <button type="button" onClick={onRetry} className="btn btn-secondary btn-sm mt-3">
-          Try again
-        </button>
-      )}
-    </div>
-  )
+  return <SharedErrorState compact title={message} onRetry={onRetry} />
 }

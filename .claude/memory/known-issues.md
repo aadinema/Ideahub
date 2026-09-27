@@ -286,19 +286,16 @@ that a Gallery error state was added was therefore not functionally true.
 Fix: destructured `isError, refetch` from the query. Regression guard:
 `pages.smoke.test.jsx` C4.
 
-### KI-018 — Re-audit HIGH findings (visual / compliance) — mostly RESOLVED
-**Status:** OPEN (one item remains: `ceoUtils`↔`components` duplication)
+### KI-018 — Re-audit HIGH findings (visual / compliance) — FIXED
+**Status:** FIXED (2026-09-27)
 **Date:** 2026-09-27
-Tracked for the UI-only fix pass (no functional impact). **Resolved across Phase 2,
-Phase 3.0, and the Phase 3 screen pass — see CHANGELOG 2026-09-27.** All contrast,
-palette, typography/CSP, skeleton, range-input, reduced-motion, tablist-keyboard
-(Admin/IdeaList/IdeaForm/Events) and audit-label items are done; final scans show
-0 hardcoded palette classes, 0 raw hex in JSX, 0 `animate-pulse`, 0
-`appearance-none`, 0 `alert(`, 0 plain-text loaders.
-**STILL OPEN:** `ceoUtils.jsx` reimplements ErrorState/EmptyState/KpiCard/
-PanelSkeleton alongside `components/` — merge candidates, not yet reconciled.
-The original finding bullets below are kept as the record; do not re-report
-resolved items as open.
+All UI-only findings from the re-audit are resolved (Phase 2 + 3.0 + Phase 3
+screen pass + Phase 4). Final scans: 0 hardcoded palette classes, 0 raw hex in
+JSX, 0 `animate-pulse`, 0 `appearance-none`, 0 `alert(`, 0 plain-text loaders.
+**Component duplication also resolved:** the shared `ErrorState`/`EmptyState`
+gained a `compact` variant, and `ceoUtils.jsx` now delegates to them instead of
+reimplementing the markup — one implementation app-wide.
+The original finding bullets below are kept only as a record.
 > Status per item (see CHANGELOG for evidence). Kept as the record; do not
 > re-report resolved items as open.
 - **Contrast (AA):** RESOLVED (Phase 2 badges + 3.0 body text; icons stay vivid).
@@ -313,7 +310,8 @@ resolved items as open.
 - **Password toggle tab order:** RESOLVED (Phase 3, Login).
 - **`alert()` → `Toast`; sidebar shift; NotFound icon:** RESOLVED (Phase 2/3).
 - **Invalid CSS colour (`${var(--x)}15`):** RESOLVED (CEO pass → `color-mix`).
-- **Component duplication (`ceoUtils` vs `components`):** STILL OPEN.
+- **Component duplication (`ceoUtils` vs `components`):** RESOLVED — shared
+  `ErrorState`/`EmptyState` gained a `compact` variant; `ceoUtils` delegates.
 
 **A11y scoring:** still unmet — KI-014. No axe/Lighthouse could be run (registry
 blocked); findings above are from source inspection, not rendered-DOM tooling.

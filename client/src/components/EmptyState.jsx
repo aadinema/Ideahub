@@ -10,11 +10,12 @@ export default function EmptyState({
   message,
   action,
   className = '',
+  compact = false,
 }) {
   return (
-    <div className={`state state-empty ${className}`}>
+    <div className={`state state-empty ${compact ? 'state-compact' : ''} ${className}`}>
       <div className="state-icon" aria-hidden="true">
-        <Icon className="w-6 h-6" />
+        <Icon className={compact ? 'w-5 h-5' : 'w-6 h-6'} />
       </div>
       <p className="state-title">{title}</p>
       {message && <p className="state-desc">{message}</p>}

@@ -88,10 +88,11 @@ All defined in `client/src/index.css` (`:root` + `[data-theme="dark"]` + `@theme
   (roving `tabIndex` + Arrow/Home/End). Implemented in AppLayout-adjacent pages:
   Admin, IdeaList, IdeaForm, Events.
 - **Components:** `ErrorState` / `EmptyState` / `Skeleton` / `KpiCard` / `Modal` /
-  `Toast` are the shared set. `ceoUtils.jsx` still holds a parallel
-  `ErrorState`/`EmptyState`/`KpiTile`/`PanelSkeleton` set — **known duplication
-  (KI-018)**, not yet merged. Tables use `.table-base` + `.table-responsive`.
-  Transient feedback uses `Toast` (presentational; no global provider yet).
+  `Toast` are the single shared set (no per-feature duplicates — `ceoUtils` delegates
+  to the shared `ErrorState`/`EmptyState`, which take a `compact` prop for dense
+  panels). `KpiTile`/`SectionPanel`/`PanelSkeleton`/`InfoTip` in `ceoUtils` remain
+  CEO-specific atoms. Tables use `.table-base` + `.table-responsive`. Transient
+  feedback uses `Toast` (presentational; no global provider yet).
 
 ## Page titles and motion
 - `hooks/usePageTitle.js` is the only per-route title mechanism (no Helmet). 18 pages
