@@ -9,6 +9,7 @@ const User = require('../models/User');
 const Implementation = require('../models/Implementation');
 const workflowService = require('../services/workflowService');
 const notificationService = require('../services/notificationService');
+const authorizationService = require('../services/authorizationService');
 const AppError = require('../utils/AppError');
 const { IDEA_STATUS, ROLES, NOTIFICATION_EVENT } = require('../../shared/constants');
 
@@ -131,7 +132,15 @@ exports.approveImplementation = async (req, res, next) => {
     if (!idea) return next(new AppError('Idea not found', 404));
 
     const { comment, implementationOwnerId } = req.body;
-    
+
+    // KI-005 / FR-05-03: validate the assignee BEFORE transitioning, so an
+    // invalid owner cannot leave the idea half-applied. Uses the same shared
+    // policy helper as POST /api/implementations (existence, active, eligibility).
+    const owner = await authorizationService.validateImplementationOwner(
+      implementationOwnerId,
+      idea.department
+    );
+
     await workflowService.transition({
       idea,
       toStatus: IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
@@ -142,7 +151,6 @@ exports.approveImplementation = async (req, res, next) => {
     });
 
     const submitter = await User.findById(idea.submittedBy).lean();
-    const owner = await User.findById(implementationOwnerId).lean();
 
     // Create the implementation record
     const existingImpl = await Implementation.findOne({ ideaId: idea._id });

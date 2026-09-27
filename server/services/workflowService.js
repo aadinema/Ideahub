@@ -73,7 +73,10 @@ const TRANSITION_VALIDATORS = {
     }
   },
 
-  // Approve for Implementation requires implementationOwnerId (FR-05-03)
+  // Approve for Implementation requires implementationOwnerId (FR-05-03).
+  // Presence is checked here; full eligibility (exists / active /
+  // implementation_owner role) is enforced by the shared policy helper
+  // authorizationService.validateImplementationOwner at the call sites.
   [IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION]: async (idea, actor, { implementationOwnerId }) => {
     if (!implementationOwnerId) {
       throw new AppError(

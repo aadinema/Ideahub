@@ -9,6 +9,8 @@ const seedUsers = require('./seedUsers');
 const seedEvaluationCriteria = require('./seedEvaluationCriteria');
 const seedCategories = require('./seedCategories');
 const seedIdeas = require('./seedIdeas');
+const seedCeoDemoIdeas = require('./seedCeoDemoIdeas');
+const seedEvents = require('./seedEvents');
 const SystemConfig = require('../models/SystemConfig');
 const logger = require('../utils/logger');
 const User = require('../models/User');
@@ -33,6 +35,12 @@ const User = require('../models/User');
 
     // 5. Seed realistic Ideas
     await seedIdeas();
+
+    // 6. Richer cross-workflow dataset for the CEO dashboard (CEO-01, idempotent)
+    await seedCeoDemoIdeas();
+
+    // 7. Ideathon events + event-linked ideas (FR-IE, idempotent)
+    await seedEvents();
 
     logger.info('✅ All seeds completed successfully.');
     process.exit(0);

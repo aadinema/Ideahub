@@ -242,7 +242,13 @@ app.use(errorHandler);
 // ---------------------------------------------------------------------------
 // Server startup
 // ---------------------------------------------------------------------------
-const PORT = process.env.PORT || 5000;
+// Startup check: PORT must be a valid TCP port; fail fast rather than listen on NaN.
+const rawPort = process.env.PORT || 5000;
+const PORT = Number.parseInt(rawPort, 10);
+if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
+  logger.error(`Invalid PORT "${rawPort}" — expected an integer between 1 and 65535.`);
+  process.exit(1);
+}
 const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });

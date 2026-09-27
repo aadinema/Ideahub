@@ -34,6 +34,14 @@ export const dashboardAPI = {
   departmentTargets: (params) => api.get('/dashboard/department-targets', { params }),
 }
 
+// CEO / C-Suite executive dashboard (server enforces authorize(ROLES.CEO))
+export const ceoAPI = {
+  overview: (params) => api.get('/dashboard/ceo/overview', { params }),
+  trends:   (params) => api.get('/dashboard/ceo/trends',   { params }),
+  pipeline: ()       => api.get('/dashboard/ceo/pipeline'),
+  insights: ()       => api.get('/dashboard/ceo/insights'),
+}
+
 // Notifications
 export const notificationsAPI = {
   list:        (params) => api.get('/notifications', { params }),
@@ -72,13 +80,17 @@ export const committeeAPI = {
 // Events
 export const eventsAPI = {
   explore: (params) => api.get('/events/explore', { params }),
+  mine: () => api.get('/events/mine'),
+  facets: () => api.get('/events/facets'),
   getById: (id) => api.get(`/events/${id}`),
   join: (id) => api.post(`/events/${id}/join`),
   getLeaderboard: (id) => api.get(`/events/${id}/leaderboard`),
   // Admin
+  list: (params) => api.get('/events', { params }),
   create: (data) => api.post('/events', data),
   update: (id, data) => api.patch(`/events/${id}`, data),
   extend: (id, data) => api.post(`/events/${id}/extend`, data),
+  close: (id) => api.post(`/events/${id}/close`),
 }
 
 // Gallery

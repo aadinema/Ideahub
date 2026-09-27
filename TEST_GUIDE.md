@@ -21,7 +21,9 @@ This document explains how to run tests locally and understand the CI pipeline.
    
    # Client
    cd ../client
-   # No .env needed for local development; Vite uses VITE_API_PORT from .env.development
+   # No .env needed if client/.env already exists. Vite reads VITE_API_PORT from
+   # client/.env (not the repo-root .env.development) and proxies /api to it.
+   # Keep it in sync with server/.env PORT — Vite warns at startup if they differ.
    ```
 
 2. **Seed database** (optional but recommended)
@@ -78,7 +80,6 @@ Runs Express route and controller tests with Jest + Supertest.
 NODE_ENV=test \
 MONGODB_URI=mongodb://localhost:27017/ideahub-test \
 JWT_ACCESS_SECRET=test-secret-key \
-JWT_REFRESH_SECRET=test-secret-key \
 npm run test
 ```
 
@@ -218,7 +219,6 @@ kill -9 <PID>
 
 - `MONGODB_URI` — Test database connection string
 - `JWT_ACCESS_SECRET` — Signing key (test value)
-- `JWT_REFRESH_SECRET` — Refresh signing key (test value)
 - AWS credentials (if uploading test artifacts)
 
 To set up secrets in GitHub:

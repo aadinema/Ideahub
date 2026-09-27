@@ -21,6 +21,7 @@ export default function Committee360Page() {
   const [actionType, setActionType] = useState(null); // 'publish', 'implement', 'reject', 'defer'
   const [comment, setComment] = useState('');
   const [implementationOwnerId, setImplementationOwnerId] = useState('');
+  const [showAllOwnerDepartments, setShowAllOwnerDepartments] = useState(false);
   const [error, setError] = useState('');
 
   const { data: viewData, isLoading } = useQuery({
@@ -85,6 +86,16 @@ export default function Committee360Page() {
   }
 
   const { idea, evaluations = [], averageScore } = viewData;
+
+  // Owner picker: default to same-department owners (soft nudge), with an opt-in to
+  // show all eligible owners. Not a hard constraint — if no same-department owner
+  // exists, all are shown, so cross-department assignment is never blocked.
+  const sameDeptOwners = owners.filter(
+    (o) => o.department && idea.department && o.department === idea.department
+  );
+  const otherDeptOwners = owners.filter((o) => !sameDeptOwners.includes(o));
+  const visibleOwners =
+    showAllOwnerDepartments || sameDeptOwners.length === 0 ? owners : sameDeptOwners;
 
   return (
     <div className="page-enter max-w-[1200px] mx-auto pb-12">
@@ -279,12 +290,22 @@ export default function Committee360Page() {
                 required
               >
                 <option value="">Select an owner…</option>
-                {owners.map((o) => (
+                {visibleOwners.map((o) => (
                   <option key={o._id} value={o._id}>
                     {o.name}{o.department ? ` — ${o.department}` : ''}
                   </option>
                 ))}
               </select>
+              {otherDeptOwners.length > 0 && (
+                <label className="flex items-center gap-2 mt-2 text-xs text-theme-text0 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showAllOwnerDepartments}
+                    onChange={(e) => setShowAllOwnerDepartments(e.target.checked)}
+                  />
+                  Show owners from other departments ({otherDeptOwners.length})
+                </label>
+              )}
               {owners.length === 0 && (
                 <p className="text-xs text-theme-text0 mt-1">No users hold the implementation-owner role yet. Assign one in Admin first.</p>
               )}

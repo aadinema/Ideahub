@@ -11,16 +11,7 @@
  */
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../store/authSlice'
-
-// Import role constants from shared (via Vite alias @shared)
-const ROLES = {
-  EMPLOYEE:             'employee',
-  SUPERVISOR:           'supervisor',
-  DEPT_INNOVATION_TEAM: 'dept_innovation_team',
-  INNOVATION_COMMITTEE: 'innovation_committee',
-  IMPLEMENTATION_OWNER: 'implementation_owner',
-  ADMIN:                'admin',
-}
+import { ROLES } from '@shared/constants'
 
 export const useRole = () => {
   const user = useSelector(selectCurrentUser)
@@ -41,9 +32,11 @@ export const useRole = () => {
     isCommittee:           roles.includes(ROLES.INNOVATION_COMMITTEE),
     isImplementationOwner: roles.includes(ROLES.IMPLEMENTATION_OWNER),
     isAdmin:               roles.includes(ROLES.ADMIN),
+    isCeo:                 roles.includes(ROLES.CEO),
     // Convenience: can access admin/management views
     canAccessAdmin:        roles.includes(ROLES.ADMIN),
     canAccessReports:      hasRole(ROLES.ADMIN, ROLES.INNOVATION_COMMITTEE, ROLES.DEPT_INNOVATION_TEAM, ROLES.SUPERVISOR),
+    canAccessCeo:          roles.includes(ROLES.CEO),
   }
 }
 

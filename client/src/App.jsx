@@ -4,6 +4,7 @@ import { selectIsAuth } from './store/authSlice'
 import AppLayout from './layouts/AppLayout'
 import LoginPage from './features/auth/LoginPage'
 import DashboardPage from './features/dashboard/DashboardPage'
+import CeoDashboardPage from './features/ceo/CeoDashboardPage'
 import IdeaListPage from './features/ideas/IdeaListPage'
 import IdeaFormPage from './features/ideas/IdeaFormPage'
 import IdeaDetailPage from './features/ideas/IdeaDetailPage'
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="ceo" element={<CeoDashboardPage />} />
           <Route path="ideas" element={<IdeaListPage />} />
           <Route path="ideas/new" element={<IdeaFormPage />} />
           <Route path="ideas/:id" element={<IdeaDetailPage />} />

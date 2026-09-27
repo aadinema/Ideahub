@@ -35,6 +35,14 @@ describe('Authorization Tests — Benefits and Implementations', () => {
   let ideaData, implementationData;
 
   beforeAll(async () => {
+    // Isolation: clear fixtures from any interrupted previous run.
+    // (jest.setup.js points MONGODB_URI at the dedicated ideahub_test DB —
+    // destructive cleanups must never touch development data.)
+    await User.deleteMany({});
+    await Idea.deleteMany({});
+    await Implementation.deleteMany({});
+    await Benefit.deleteMany({});
+
     // Create test users with different roles
     submitterUser = await User.create({
       name: 'Idea Submitter',
@@ -52,7 +60,10 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       password: 'HashedPass123',
       employeeId: 'EMP002',
       department: 'Engineering',
-      roles: [ROLES.EMPLOYEE],
+      // Realistic: an implementation owner also holds the implementation_owner
+      // role — the workflow role map requires it for progress/benefits
+      // transitions (workflowService.TRANSITION_ROLE_MAP).
+      roles: [ROLES.EMPLOYEE, ROLES.IMPLEMENTATION_OWNER],
       isActive: true,
     });
 
@@ -86,6 +97,7 @@ describe('Authorization Tests — Benefits and Implementations', () => {
     ideaData = await Idea.create({
       title: 'Test Idea for Auth',
       category: 'Process Improvement',
+      benefitTypes: ['process_optimization'],
       department: 'Engineering',
       problemStatement: 'This is a test problem statement for authorization testing',
       proposedSolution: 'This is a test solution for authorization testing',
@@ -164,8 +176,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       const newIdea = await Idea.create({
         title: 'Another Test Idea',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Another test problem',
+        problemStatement: 'Another test problem statement for authorization testing, padded to fifty characters.',
         proposedSolution: 'Another test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
@@ -191,8 +204,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       const newIdea = await Idea.create({
         title: 'Third Test Idea',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Third test problem',
+        problemStatement: 'Third test problem statement for authorization testing, padded to fifty characters.',
         proposedSolution: 'Third test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
@@ -221,8 +235,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       const newIdea = await Idea.create({
         title: 'Fourth Test Idea',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Fourth test problem',
+        problemStatement: 'Fourth test problem statement for authorization testing, padded to fifty characters.',
         proposedSolution: 'Fourth test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
@@ -256,8 +271,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       ideaData = await Idea.create({
         title: 'Benefit Test Idea',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Benefit test problem',
+        problemStatement: 'Benefit test problem statement for authorization testing, padded to fifty characters.',
         proposedSolution: 'Benefit test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.IMPLEMENTATION_COMPLETED,
@@ -307,8 +323,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       const newIdea = await Idea.create({
         title: 'Benefit Creation Test',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Benefit creation test problem',
+        problemStatement: 'Benefit creation test problem statement for authorization testing, fifty characters.',
         proposedSolution: 'Benefit creation test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.IMPLEMENTATION_COMPLETED,
@@ -343,8 +360,9 @@ describe('Authorization Tests — Benefits and Implementations', () => {
       const newIdea = await Idea.create({
         title: 'Benefit Deny Test',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Benefit deny test problem',
+        problemStatement: 'Benefit deny test problem statement for authorization testing, padded to fifty chars.',
         proposedSolution: 'Benefit deny test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.IMPLEMENTATION_COMPLETED,
@@ -372,15 +390,16 @@ describe('Authorization Tests — Benefits and Implementations', () => {
         .expect(403);
 
       expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Access denied');
+      expect(res.body.message).toContain('implementation owner or an administrator');
     });
 
     test('[ALLOW] Admin can read and create benefits', async () => {
       const newIdea = await Idea.create({
         title: 'Admin Benefit Test',
         category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
         department: 'Engineering',
-        problemStatement: 'Admin benefit test problem',
+        problemStatement: 'Admin benefit test problem statement for authorization testing, fifty characters.',
         proposedSolution: 'Admin benefit test solution',
         submittedBy: submitterUser._id,
         status: IDEA_STATUS.IMPLEMENTATION_COMPLETED,
@@ -415,6 +434,104 @@ describe('Authorization Tests — Benefits and Implementations', () => {
         .expect(200);
 
       expect(readRes.body.success).toBe(true);
+    });
+  });
+
+  describe('Implementation owner eligibility (KI-005)', () => {
+    const future = () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    const makeApprovedIdea = (title) =>
+      Idea.create({
+        title,
+        category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
+        department: 'Engineering',
+        problemStatement:
+          'Owner eligibility test problem statement padded to at least fifty characters long.',
+        proposedSolution: 'Owner eligibility test solution',
+        submittedBy: submitterUser._id,
+        status: IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
+      });
+
+    test('[DENY] createImplementation rejects an active same-dept user WITHOUT the implementation_owner role', async () => {
+      const noRole = await User.create({
+        name: 'No Role User',
+        email: 'norole@test.com',
+        password: 'HashedPass123',
+        employeeId: 'EMP-NOROLE',
+        department: 'Engineering',
+        roles: [ROLES.EMPLOYEE],
+        isActive: true,
+      });
+      const idea = await makeApprovedIdea('No-role owner rejection idea');
+
+      const res = await request(app)
+        .post('/api/implementations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          ideaId: idea._id,
+          ownerId: noRole._id,
+          department: 'Engineering',
+          startDate: new Date(),
+          targetCompletionDate: future(),
+        })
+        .expect(400);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/implementation_owner role/i);
+    });
+
+    test('[ALLOW] createImplementation accepts an eligible role-holding owner', async () => {
+      const eligible = await User.create({
+        name: 'Eligible Owner',
+        email: 'eligible@test.com',
+        password: 'HashedPass123',
+        employeeId: 'EMP-ELIG',
+        department: 'Engineering',
+        roles: [ROLES.EMPLOYEE, ROLES.IMPLEMENTATION_OWNER],
+        isActive: true,
+      });
+      const idea = await makeApprovedIdea('Eligible owner acceptance idea');
+
+      const res = await request(app)
+        .post('/api/implementations')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          ideaId: idea._id,
+          ownerId: eligible._id,
+          department: 'Engineering',
+          startDate: new Date(),
+          targetCompletionDate: future(),
+        })
+        .expect(201);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.ownerId).toBeDefined();
+    });
+
+    test('[DENY] committee approve-implementation rejects a non-existent owner (not 500)', async () => {
+      const idea = await Idea.create({
+        title: 'Committee owner validation idea',
+        category: 'Process Improvement',
+        benefitTypes: ['process_optimization'],
+        department: 'Engineering',
+        problemStatement:
+          'Committee owner validation problem statement padded beyond fifty characters.',
+        proposedSolution: 'Committee owner validation solution',
+        submittedBy: submitterUser._id,
+        status: IDEA_STATUS.UNDER_COMMITTEE_REVIEW,
+      });
+
+      const res = await request(app)
+        .post(`/api/committee/ideas/${idea._id}/approve-implementation`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          comment: 'Assigning a bogus owner id to prove validation runs before create.',
+          implementationOwnerId: new mongoose.Types.ObjectId().toString(),
+        });
+
+      expect([400, 404]).toContain(res.status);
+      expect(res.status).not.toBe(500);
     });
   });
 });

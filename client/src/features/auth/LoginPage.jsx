@@ -10,8 +10,10 @@ const DEMO_USERS = [
   { label: 'Employee', email: 'employee@ideahub.local' },
   { label: 'Supervisor', email: 'supervisor@ideahub.local' },
   { label: 'Dept Innovation Team', email: 'dept.team@ideahub.local' },
+  { label: 'Dept Innovation Team 2', email: 'dept.team2@ideahub.local' },
   { label: 'Committee Member', email: 'committee@ideahub.local' },
   { label: 'Implementation Owner', email: 'impl.owner@ideahub.local' },
+  { label: 'CEO', email: 'ceo@ideahub.local' },
 ]
 
 export default function LoginPage() {

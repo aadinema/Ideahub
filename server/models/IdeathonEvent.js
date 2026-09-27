@@ -87,6 +87,13 @@ const ideathonEventSchema = new mongoose.Schema(
     // Append-only extension history — FR-IE-07
     extensionHistory: [extensionHistorySchema],
 
+    // Whether the "closing in 48 hours" reminder (FRD §11) has been sent —
+    // guards against duplicate sends from the daily reminder job.
+    closingReminderSent: {
+      type: Boolean,
+      default: false,
+    },
+
     // Configurable min qualifying score threshold — FRD §8.2
     minQualifyingScore: {
       type: Number,

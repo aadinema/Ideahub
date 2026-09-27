@@ -18,6 +18,9 @@ const ROLES = Object.freeze({
   INNOVATION_COMMITTEE: 'innovation_committee',
   IMPLEMENTATION_OWNER: 'implementation_owner',
   ADMIN: 'admin',
+  // C-Suite / Executive read-only role — gates the CEO dashboard (CEO-01).
+  // Read-only: confers no write or admin authority anywhere.
+  CEO: 'ceo',
 });
 
 const ALL_ROLES = Object.values(ROLES);
@@ -49,6 +52,62 @@ const IDEA_STATUS = Object.freeze({
 });
 
 const ALL_IDEA_STATUSES = Object.values(IDEA_STATUS);
+
+/**
+ * Canonical status groupings (single source of truth for exec reporting and
+ * drill-down filters — server re-exports via utils/ideaStatusGroups.js).
+ * FRD §5.2 lifecycle semantics:
+ *   APPROVED    — at or past Innovation Committee approval.
+ *   IMPLEMENTED — implementation completed or beyond.
+ *   ACTIVE      — currently moving through the workflow (non-draft,
+ *                 non-terminal).
+ *   REJECTED    — terminal rejections.
+ *   NON_DRAFT   — everything except drafts.
+ */
+const GROUP_APPROVED = [
+  IDEA_STATUS.APPROVED_FOR_PUBLISHING,
+  IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
+  IDEA_STATUS.PUBLISHED,
+  IDEA_STATUS.IMPLEMENTATION_INITIATED,
+  IDEA_STATUS.IMPLEMENTATION_IN_PROGRESS,
+  IDEA_STATUS.IMPLEMENTATION_COMPLETED,
+  IDEA_STATUS.BENEFITS_RECORDED,
+  IDEA_STATUS.OUTCOME_MONITORED,
+  IDEA_STATUS.CLOSED,
+];
+const GROUP_IMPLEMENTED = [
+  IDEA_STATUS.IMPLEMENTATION_COMPLETED,
+  IDEA_STATUS.BENEFITS_RECORDED,
+  IDEA_STATUS.OUTCOME_MONITORED,
+  IDEA_STATUS.CLOSED,
+];
+const GROUP_ACTIVE = [
+  IDEA_STATUS.SUBMITTED,
+  IDEA_STATUS.UNDER_SUPERVISOR_REVIEW,
+  IDEA_STATUS.SUPERVISOR_APPROVED,
+  IDEA_STATUS.RETURNED,
+  IDEA_STATUS.UNDER_DEPARTMENT_EVALUATION,
+  IDEA_STATUS.SHORTLISTED,
+  IDEA_STATUS.UNDER_COMMITTEE_REVIEW,
+  IDEA_STATUS.APPROVED_FOR_PUBLISHING,
+  IDEA_STATUS.APPROVED_FOR_IMPLEMENTATION,
+  IDEA_STATUS.PUBLISHED,
+  IDEA_STATUS.IMPLEMENTATION_INITIATED,
+  IDEA_STATUS.IMPLEMENTATION_IN_PROGRESS,
+];
+const GROUP_REJECTED = [
+  IDEA_STATUS.SUPERVISOR_REJECTED,
+  IDEA_STATUS.REJECTED_BY_DEPT,
+  IDEA_STATUS.COMMITTEE_REJECTED,
+];
+
+const IDEA_STATUS_GROUPS = Object.freeze({
+  APPROVED: Object.freeze(GROUP_APPROVED),
+  IMPLEMENTED: Object.freeze(GROUP_IMPLEMENTED),
+  ACTIVE: Object.freeze(GROUP_ACTIVE),
+  REJECTED: Object.freeze(GROUP_REJECTED),
+  NON_DRAFT: Object.freeze([...GROUP_ACTIVE, ...GROUP_IMPLEMENTED, ...GROUP_REJECTED]),
+});
 
 /**
  * Status machine — allowed transitions.
@@ -223,6 +282,10 @@ const NOTIFICATION_EVENT = Object.freeze({
   SUPERVISOR_SLA_BREACH: 'supervisor_sla_breach',
   NEW_IDEATHON_LAUNCHED: 'new_ideathon_launched',
   IDEATHON_CLOSING_48H: 'ideathon_closing_48h',
+  // FR-IE-03: confirmation sent to the employee when they register for an event.
+  IDEATHON_JOIN_CONFIRMED: 'ideathon_join_confirmed',
+  // FR-IE-07: deadline extension must notify all registered participants.
+  IDEATHON_EXTENDED: 'ideathon_extended',
 });
 
 /**
@@ -245,6 +308,8 @@ const NOTIFICATION_MATRIX = Object.freeze({
   [NOTIFICATION_EVENT.SUPERVISOR_SLA_BREACH]:        { email: true,  inApp: true,  dashboardAlert: true  },
   [NOTIFICATION_EVENT.NEW_IDEATHON_LAUNCHED]:        { email: true,  inApp: true,  dashboardAlert: false },
   [NOTIFICATION_EVENT.IDEATHON_CLOSING_48H]:         { email: true,  inApp: true,  dashboardAlert: true  },
+  [NOTIFICATION_EVENT.IDEATHON_JOIN_CONFIRMED]:      { email: true,  inApp: true,  dashboardAlert: false },
+  [NOTIFICATION_EVENT.IDEATHON_EXTENDED]:            { email: true,  inApp: true,  dashboardAlert: true  },
 });
 
 // ---------------------------------------------------------------------------
@@ -391,6 +456,7 @@ exports.ROLES = ROLES;
 exports.ALL_ROLES = ALL_ROLES;
 exports.IDEA_STATUS = IDEA_STATUS;
 exports.ALL_IDEA_STATUSES = ALL_IDEA_STATUSES;
+exports.IDEA_STATUS_GROUPS = IDEA_STATUS_GROUPS;
 exports.STATUS_TRANSITIONS = STATUS_TRANSITIONS;
 exports.BENEFIT_TYPE = BENEFIT_TYPE;
 exports.ALL_BENEFIT_TYPES = ALL_BENEFIT_TYPES;

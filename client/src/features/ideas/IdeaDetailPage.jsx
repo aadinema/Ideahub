@@ -167,6 +167,15 @@ export default function IdeaDetailPage() {
                   <dd className="text-theme-text">{idea.initiative}</dd>
                 </div>
               )}
+              {idea.estimatedValueINR != null && (
+                <div>
+                  <dt className="text-theme-text0 mb-0.5">Estimated Value</dt>
+                  <dd className="text-theme-text" title="Submitter's estimate — not a realized financial result">
+                    ₹{idea.estimatedValueINR.toLocaleString('en-IN')}
+                    <span className="text-[10px] text-theme-text0 ml-1.5">estimated</span>
+                  </dd>
+                </div>
+              )}
               {idea.linkedEventId && (
                 <div>
                   <dt className="text-theme-text0 mb-0.5">Ideathon</dt>

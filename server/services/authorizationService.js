@@ -83,8 +83,12 @@ exports.canAccessImplementation = async (user, implementation, idea, action = 'r
     return action === 'read';
   }
 
-  // Implementation owner can read/write
-  if (implementation.ownerId?.toString() === user._id.toString()) {
+  // Implementation owner can read/write.
+  // ownerId may be a populated object ({ _id, name, ... }) when the caller
+  // populates before authorizing (e.g. getImplementationByIdea) — unwrap _id
+  // so the comparison works for both populated and raw ObjectId shapes.
+  const ownerId = implementation.ownerId?._id ?? implementation.ownerId;
+  if (ownerId && ownerId.toString() === user._id.toString()) {
     return true;
   }
 
@@ -142,13 +146,21 @@ exports.validateImplementationOwner = async (ownerId, implementationDepartment) 
     throw new AppError('Selected implementation owner is not active', 400);
   }
 
-  // Owner should be from the implementation's department or be admin/coordinator
-  if (
-    owner.department !== implementationDepartment &&
-    !owner.roles.includes(ROLES.ADMIN)
-  ) {
+  // Eligibility (rule A, confirmed): the assignee must be able to progress the
+  // work — workflowService.TRANSITION_ROLE_MAP only permits IMPLEMENTATION_OWNER
+  // (or ADMIN) to transition implementation/benefit statuses, so assigning a user
+  // without the role produces a dead assignment the owner cannot act on.
+  //
+  // Department match is intentionally NOT required: the committee owner directory
+  // (committeeController.getImplementationOwners) is role-based and dept-agnostic,
+  // and cross-department assignment is legitimate. `implementationDepartment` is
+  // retained for call-site compatibility (and possible future dept-aware checks).
+  const isEligible =
+    owner.roles.includes(ROLES.IMPLEMENTATION_OWNER) ||
+    owner.roles.includes(ROLES.ADMIN);
+  if (!isEligible) {
     throw new AppError(
-      'Implementation owner must be from the same department or an administrator',
+      'Implementation owner must hold the implementation_owner role (or be an administrator).',
       400
     );
   }

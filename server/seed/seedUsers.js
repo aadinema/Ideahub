@@ -75,6 +75,16 @@ const DEMO_USERS = [
     grade: 'G3',
     roles: [ROLES.IMPLEMENTATION_OWNER, ROLES.EMPLOYEE],
   },
+  {
+    employeeId: 'EMP-CEO-001',
+    name: 'Aaditya Nema',
+    email: 'ceo@ideahub.local',
+    department: 'Strategy',
+    designation: 'Chief Executive Officer',
+    grade: 'G1',
+    // C-Suite read-only role — gates the CEO dashboard (CEO-01).
+    roles: [ROLES.CEO],
+  },
 ];
 
 const seed = async () => {

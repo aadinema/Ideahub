@@ -17,6 +17,7 @@ const {
   ideaUpdateSchema,
   implementationCreateSchema,
   benefitCreateSchema,
+  adminUpdateUserSchema,
   handleValidationErrors,
 } = require('../utils/validators');
 const {
@@ -48,10 +49,40 @@ describe('Input Validation Schemas', () => {
         problemStatement: 'New customers spend 3 hours on manual form entry and phone calls during onboarding. This creates friction and delays product activation by 1-2 days.',
         proposedSolution: 'Implement an automated online onboarding portal with pre-filled data from CRM, document e-signatures, and instant account provisioning. Integrate with payment gateway for one-click billing setup.',
         expectedBenefits: 'Reduce onboarding time to 30 minutes, improve customer satisfaction, increase activation rate by 25%.',
+        benefitTypes: ['process_optimization', 'time_savings'],
+        estimatedValueINR: '250000',
       };
 
       const result = await runValidation(ideaCreateSchema, validData);
       expect(result.isEmpty()).toBe(true);
+    });
+
+    it('should accept idea creation data without an estimated value (optional field)', async () => {
+      const validData = {
+        title: 'Improve Customer Onboarding Process',
+        category: 'Process Improvement',
+        department: 'Operations',
+        problemStatement: 'New customers spend 3 hours on manual form entry and phone calls during onboarding. This creates friction and delays product activation by 1-2 days.',
+        benefitTypes: ['process_optimization'],
+      };
+
+      const result = await runValidation(ideaCreateSchema, validData);
+      expect(result.isEmpty()).toBe(true);
+    });
+
+    it('should reject idea with negative estimated value', async () => {
+      const invalidData = {
+        title: 'Improve Customer Onboarding Process',
+        category: 'Process Improvement',
+        department: 'Operations',
+        problemStatement: 'New customers spend 3 hours on manual form entry and phone calls during onboarding. This creates friction and delays product activation by 1-2 days.',
+        benefitTypes: ['process_optimization'],
+        estimatedValueINR: '-500',
+      };
+
+      const result = await runValidation(ideaCreateSchema, invalidData);
+      expect(result.isEmpty()).toBe(false);
+      expect(result.array().some((e) => e.msg.includes('Estimated value'))).toBe(true);
     });
 
     it('should reject idea with title too short', async () => {
@@ -79,21 +110,35 @@ describe('Input Validation Schemas', () => {
 
       const result = await runValidation(ideaCreateSchema, invalidData);
       expect(result.isEmpty()).toBe(false);
-      expect(result.array()[0].msg).toContain('between 50 and 2000');
+      expect(result.array()[0].msg).toContain('between 50 and 5000');
     });
 
-    it('should reject idea with invalid category', async () => {
+    it('should reject idea with missing category', async () => {
       const invalidData = {
         title: 'Valid Idea Title',
-        category: 'Invalid Category', // not in enum
+        category: '', // required
         department: 'Operations',
         problemStatement: 'A problem statement that is long enough to pass validation with more than fifty characters.',
         proposedSolution: 'A proposed solution that is long enough to pass validation with more than fifty characters.',
+        benefitTypes: ['process_optimization'],
       };
 
       const result = await runValidation(ideaCreateSchema, invalidData);
       expect(result.isEmpty()).toBe(false);
-      expect(result.array()[0].msg).toContain('Invalid category');
+      expect(result.array()[0].msg).toContain('Category is required');
+    });
+
+    it('should reject idea without benefit types (FR-02-03)', async () => {
+      const invalidData = {
+        title: 'Valid Idea Title',
+        category: 'Process Improvement',
+        department: 'Operations',
+        problemStatement: 'A problem statement that is long enough to pass validation with more than fifty characters.',
+      };
+
+      const result = await runValidation(ideaCreateSchema, invalidData);
+      expect(result.isEmpty()).toBe(false);
+      expect(result.array().some((e) => e.msg.includes('benefit type'))).toBe(true);
     });
 
     it('should accept valid idea update data (partial)', async () => {
@@ -104,6 +149,26 @@ describe('Input Validation Schemas', () => {
 
       const result = await runValidation(ideaUpdateSchema, partialData);
       expect(result.isEmpty()).toBe(true);
+    });
+  });
+
+  describe('Admin User Role Validation', () => {
+    it('should accept the ceo role (shared ALL_ROLES source of truth)', async () => {
+      const result = await runValidation(adminUpdateUserSchema, { roles: ['ceo'] });
+      expect(result.isEmpty()).toBe(true);
+    });
+
+    it('should accept all canonical roles', async () => {
+      const result = await runValidation(adminUpdateUserSchema, {
+        roles: ['admin', 'employee', 'supervisor', 'dept_innovation_team', 'innovation_committee', 'implementation_owner', 'ceo'],
+      });
+      expect(result.isEmpty()).toBe(true);
+    });
+
+    it('should reject a role that is not in ALL_ROLES', async () => {
+      const result = await runValidation(adminUpdateUserSchema, { roles: ['superuser'] });
+      expect(result.isEmpty()).toBe(false);
+      expect(result.array()[0].msg).toContain('Invalid role');
     });
   });
 

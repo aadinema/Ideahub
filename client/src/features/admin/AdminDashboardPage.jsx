@@ -5,9 +5,11 @@
  */
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminAPI } from '../../api';
+import { adminAPI, eventsAPI } from '../../api';
 import {
   ROLES, ALL_ROLES, TARGET_TYPE, getFYLabel,
+  EVENT_TYPE, ALL_EVENT_TYPES, EVENT_VISIBILITY, ALL_EVENT_VISIBILITIES,
+  EVENT_STATUS, ALL_EVENT_STATUSES,
 } from '@shared/constants';
 import Modal from '../../components/Modal';
 import RichTextEditor from '../../components/RichTextEditor';
@@ -15,9 +17,11 @@ import RichText from '../../components/RichText';
 import {
   Users, Target, SlidersHorizontal, Megaphone, ScrollText,
   AlertCircle, Plus, Trash2, UserPlus, Power,
+  Calendar, Clock, Send, Ban, ChevronDown, ChevronUp, Lock, Globe,
 } from 'lucide-react';
 
-const ROLE_LABEL = (r) => r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+const ROLE_LABEL = (r) =>
+  r === 'ceo' ? 'CEO' : r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const TARGET_TYPE_LABEL = {
   [TARGET_TYPE.TOTAL_IDEAS]: 'Total Ideas',
   [TARGET_TYPE.APPROVED_IDEAS]: 'Approved Ideas',
@@ -28,11 +32,21 @@ const TABS = [
   { id: 'users',         label: 'User Management',    icon: Users },
   { id: 'targets',       label: 'Department Targets', icon: Target },
   { id: 'criteria',      label: 'Evaluation Criteria',icon: SlidersHorizontal },
+  { id: 'events',        label: 'Ideathon Events',    icon: Calendar },
   { id: 'announcements', label: 'Announcements',      icon: Megaphone },
   { id: 'audit',         label: 'Audit Log',          icon: ScrollText },
 ];
 
 const DEPARTMENTS = ['Engineering', 'Sales', 'Marketing', 'Operations', 'HR', 'Finance'];
+
+// Departments selectable when creating a restricted event (FR-IE-02).
+const EVENT_DEPARTMENTS = [
+  'IT', 'Operations', 'Finance', 'Human Resources', 'Strategy',
+  'Marketing', 'Sales', 'Engineering',
+];
+
+const EVENT_LABEL = (v = '') =>
+  v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function AdminDashboardPage() {
   const queryClient = useQueryClient();
@@ -64,6 +78,7 @@ export default function AdminDashboardPage() {
       {activeTab === 'users'         && <UsersTab queryClient={queryClient} />}
       {activeTab === 'targets'       && <TargetsTab queryClient={queryClient} />}
       {activeTab === 'criteria'      && <CriteriaTab queryClient={queryClient} />}
+      {activeTab === 'events'        && <EventsTab queryClient={queryClient} />}
       {activeTab === 'announcements' && <AnnouncementsTab queryClient={queryClient} />}
       {activeTab === 'audit'         && <AuditTab />}
     </div>
@@ -556,6 +571,379 @@ function AnnouncementsTab({ queryClient }) {
             <button type="button" onClick={closeForm} className="btn btn-ghost">Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saveMutation.isPending}>
               {saveMutation.isPending ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
+
+/* ─────────────────────────── Events Tab ─────────────────────────── */
+const emptyEventForm = {
+  eventName: '',
+  theme: '',
+  description: '',
+  eventType: EVENT_TYPE.IDEATHON,
+  initiative: '',
+  startDate: '',
+  endDate: '',
+  targetDepartments: [],
+  maxParticipants: '',
+  ideaCategory: '',
+  visibility: EVENT_VISIBILITY.DRAFT,
+  status: EVENT_STATUS.DRAFT,
+  minQualifyingScore: 6,
+  quorumType: 'majority',
+  quorumValue: '',
+};
+
+// Convert a Date/ISO string to the yyyy-mm-dd a <input type="date"> expects,
+// in local time.
+const toDateInput = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+};
+
+const STATUS_BADGE = {
+  [EVENT_STATUS.ACTIVE]: 'bg-emerald-500/20 text-emerald-600',
+  [EVENT_STATUS.EXTENDED]: 'bg-blue-500/20 text-blue-600',
+  [EVENT_STATUS.CLOSED]: 'bg-theme-border/50 text-theme-text0',
+  [EVENT_STATUS.DRAFT]: 'bg-amber-500/20 text-amber-600',
+};
+
+function EventsTab({ queryClient }) {
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyEventForm);
+  const [error, setError] = useState('');
+
+  const [extendFor, setExtendFor] = useState(null);
+  const [extendForm, setExtendForm] = useState({ newEndDate: '', justification: '' });
+  const [extendError, setExtendError] = useState('');
+
+  const [expanded, setExpanded] = useState(null);
+
+  const { data: events = [], isLoading } = useQuery({
+    queryKey: ['adminEvents'],
+    queryFn: () => eventsAPI.list().then((r) => r.data.data),
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ['adminEvents'] });
+    queryClient.invalidateQueries({ queryKey: ['exploreEvents'] });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: (data) => (editing ? eventsAPI.update(editing, data) : eventsAPI.create(data)),
+    onSuccess: () => { invalidate(); closeForm(); },
+    onError: (err) => setError(err.response?.data?.message || 'Failed to save event.'),
+  });
+  const publishMutation = useMutation({
+    mutationFn: (id) => eventsAPI.update(id, {
+      visibility: EVENT_VISIBILITY.PUBLISHED,
+      status: EVENT_STATUS.ACTIVE,
+    }),
+    onSuccess: invalidate,
+  });
+  const closeMutation = useMutation({
+    mutationFn: (id) => eventsAPI.close(id),
+    onSuccess: invalidate,
+  });
+  const extendMutation = useMutation({
+    mutationFn: ({ id, data }) => eventsAPI.extend(id, data),
+    onSuccess: () => { invalidate(); closeExtend(); },
+    onError: (err) => setExtendError(err.response?.data?.message || 'Failed to extend deadline.'),
+  });
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyEventForm);
+    setError('');
+    setShowForm(true);
+  };
+  const openEdit = (ev) => {
+    setEditing(ev._id);
+    setForm({
+      eventName: ev.eventName || '',
+      theme: ev.theme || '',
+      description: ev.description || '',
+      eventType: ev.eventType || EVENT_TYPE.IDEATHON,
+      initiative: ev.initiative || '',
+      startDate: toDateInput(ev.startDate),
+      endDate: toDateInput(ev.endDate),
+      targetDepartments: ev.targetDepartments || [],
+      maxParticipants: ev.maxParticipants ?? '',
+      ideaCategory: ev.ideaCategory || '',
+      visibility: ev.visibility || EVENT_VISIBILITY.DRAFT,
+      status: ev.status || EVENT_STATUS.DRAFT,
+      minQualifyingScore: ev.minQualifyingScore ?? 6,
+      quorumType: ev.quorumType || 'majority',
+      quorumValue: ev.quorumValue ?? '',
+    });
+    setError('');
+    setShowForm(true);
+  };
+  const closeForm = () => { setShowForm(false); setEditing(null); };
+
+  const openExtend = (ev) => {
+    setExtendFor(ev);
+    setExtendForm({ newEndDate: toDateInput(ev.endDate), justification: '' });
+    setExtendError('');
+  };
+  const closeExtend = () => { setExtendFor(null); setExtendForm({ newEndDate: '', justification: '' }); };
+
+  const toggleDept = (d) => setForm((f) => ({
+    ...f,
+    targetDepartments: f.targetDepartments.includes(d)
+      ? f.targetDepartments.filter((x) => x !== d)
+      : [...f.targetDepartments, d],
+  }));
+
+  const submit = (e) => {
+    e.preventDefault();
+    setError('');
+    if (!form.eventName.trim() || !form.startDate || !form.endDate) {
+      setError('Event name, start date and end date are required.');
+      return;
+    }
+    saveMutation.mutate({
+      ...form,
+      maxParticipants: form.maxParticipants === '' ? null : Number(form.maxParticipants),
+      minQualifyingScore: Number(form.minQualifyingScore),
+      quorumValue: form.quorumValue === '' ? null : Number(form.quorumValue),
+      targetDepartments: form.visibility === EVENT_VISIBILITY.RESTRICTED ? form.targetDepartments : [],
+    });
+  };
+
+  const submitExtend = (e) => {
+    e.preventDefault();
+    setExtendError('');
+    if (extendForm.justification.trim().length < 20) {
+      setExtendError('Justification must be at least 20 characters (FR-IE-07).');
+      return;
+    }
+    extendMutation.mutate({ id: extendFor._id, data: extendForm });
+  };
+
+  return (
+    <div className="glass rounded-2xl p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-lg font-bold text-theme-text">Ideathon Events</h3>
+        <button onClick={openCreate} className="btn btn-primary btn-sm"><Plus className="w-4 h-4" /> New Event</button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">{[...Array(3)].map((_, i) => <div key={i} className="h-24 bg-theme-surface rounded-lg animate-pulse" />)}</div>
+      ) : events.length === 0 ? (
+        <p className="text-sm text-theme-text0 italic">No events yet. Create one to launch an Ideathon.</p>
+      ) : (
+        <div className="space-y-3">
+          {events.map((ev) => {
+            const participants = ev.participants || [];
+            const isDraft = ev.visibility === EVENT_VISIBILITY.DRAFT || ev.status === EVENT_STATUS.DRAFT;
+            const isClosed = ev.status === EVENT_STATUS.CLOSED;
+            const isOpen = expanded === ev._id;
+            return (
+              <div key={ev._id} className="p-4 rounded-xl bg-theme-surface/50 border border-theme-border">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h4 className="font-semibold text-theme-text">{ev.eventName}</h4>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${STATUS_BADGE[ev.status] || 'bg-theme-border/50 text-theme-text0'}`}>
+                        {ev.status}
+                      </span>
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-theme-border/40 text-theme-text/80 flex items-center gap-1">
+                        {ev.visibility === EVENT_VISIBILITY.RESTRICTED ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                        {ev.visibility}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent">
+                        {EVENT_LABEL(ev.eventType)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-theme-text/80 line-clamp-2">{ev.description}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-theme-text0">
+                      <span>{new Date(ev.startDate).toLocaleDateString('en-IN')} → {new Date(ev.endDate).toLocaleDateString('en-IN')}</span>
+                      {ev.initiative && <span>Initiative: {ev.initiative}</span>}
+                      {ev.ideaCategory && <span>Category: {ev.ideaCategory}</span>}
+                      {ev.visibility === EVENT_VISIBILITY.RESTRICTED && <span>Targets: {(ev.targetDepartments || []).join(', ') || '—'}</span>}
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(isOpen ? null : ev._id)}
+                        className="text-theme-accent inline-flex items-center gap-1"
+                        aria-expanded={isOpen}
+                      >
+                        {participants.length} participant{participants.length === 1 ? '' : 's'}
+                        {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                    </div>
+                    {isOpen && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {participants.length === 0 ? (
+                          <span className="text-[11px] text-theme-text0 italic">No registrations yet.</span>
+                        ) : participants.map((p) => (
+                          <span key={p._id || p} className="text-[11px] px-2 py-0.5 rounded-full bg-theme-bg border border-theme-border text-theme-text/90">
+                            {p.name || 'Unknown'}{p.department ? ` · ${p.department}` : ''}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {isDraft && (
+                      <button onClick={() => publishMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-emerald-600" title="Publish (visible to all active employees)">
+                        <Send className="w-4 h-4" /> Publish
+                      </button>
+                    )}
+                    <button onClick={() => openEdit(ev)} className="btn btn-ghost btn-sm">Edit</button>
+                    <button onClick={() => openExtend(ev)} className="btn btn-ghost btn-sm" title="Extend deadline (FR-IE-07)">
+                      <Clock className="w-4 h-4" /> Extend
+                    </button>
+                    {!isClosed && (
+                      <button onClick={() => closeMutation.mutate(ev._id)} className="btn btn-ghost btn-sm text-rose-600" title="Close event">
+                        <Ban className="w-4 h-4" /> Close
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Create / Edit modal (FR-IE-01) ── */}
+      <Modal open={showForm} onClose={closeForm} title={editing ? 'Edit Event' : 'New Ideathon Event'} size="lg">
+        {error && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{error}</div>}
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="text-label block mb-2">Event Name <span className="text-rose-500">*</span></label>
+            <input className="input-base" value={form.eventName} onChange={(e) => setForm({ ...form, eventName: e.target.value })} required />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label block mb-2">Event Type <span className="text-rose-500">*</span></label>
+              <select className="input-base" value={form.eventType} onChange={(e) => setForm({ ...form, eventType: e.target.value })}>
+                {ALL_EVENT_TYPES.map((t) => <option key={t} value={t}>{EVENT_LABEL(t)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-label block mb-2">Theme</label>
+              <input className="input-base" value={form.theme} onChange={(e) => setForm({ ...form, theme: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label className="text-label block mb-2">Description</label>
+            <textarea className="input-base min-h-[80px]" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label block mb-2">Start Date <span className="text-rose-500">*</span></label>
+              <input type="date" className="input-base" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} required />
+            </div>
+            <div>
+              <label className="text-label block mb-2">End Date <span className="text-rose-500">*</span></label>
+              <input type="date" className="input-base" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} required />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label block mb-2">Initiative</label>
+              <input className="input-base" value={form.initiative} onChange={(e) => setForm({ ...form, initiative: e.target.value })} placeholder="e.g. Digital Transformation" />
+            </div>
+            <div>
+              <label className="text-label block mb-2">Idea Category</label>
+              <input className="input-base" value={form.ideaCategory} onChange={(e) => setForm({ ...form, ideaCategory: e.target.value })} placeholder="e.g. Process Improvement" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-label block mb-2">Max Participants</label>
+              <input type="number" min="1" className="input-base" value={form.maxParticipants} onChange={(e) => setForm({ ...form, maxParticipants: e.target.value })} placeholder="Unlimited" />
+            </div>
+            <div>
+              <label className="text-label block mb-2">Visibility</label>
+              <select className="input-base" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}>
+                {ALL_EVENT_VISIBILITIES.map((v) => <option key={v} value={v}>{EVENT_LABEL(v)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-label block mb-2">Status</label>
+              <select className="input-base" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                {ALL_EVENT_STATUSES.map((s) => <option key={s} value={s}>{EVENT_LABEL(s)}</option>)}
+              </select>
+            </div>
+          </div>
+          {form.visibility === EVENT_VISIBILITY.RESTRICTED && (
+            <div>
+              <label className="text-label block mb-2">Target Departments (restricted)</label>
+              <div className="flex flex-wrap gap-2">
+                {EVENT_DEPARTMENTS.map((d) => (
+                  <button
+                    type="button"
+                    key={d}
+                    onClick={() => toggleDept(d)}
+                    aria-pressed={form.targetDepartments.includes(d)}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      form.targetDepartments.includes(d)
+                        ? 'bg-theme-accent text-white border-theme-accent'
+                        : 'bg-theme-bg text-theme-text/80 border-theme-border hover:border-theme-accent'
+                    }`}
+                  >
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="text-label block mb-2">Min Qualifying Score</label>
+              <input type="number" min="0" max="10" step="0.5" className="input-base" value={form.minQualifyingScore} onChange={(e) => setForm({ ...form, minQualifyingScore: e.target.value })} />
+            </div>
+            <div>
+              <label className="text-label block mb-2">Quorum Type</label>
+              <select className="input-base" value={form.quorumType} onChange={(e) => setForm({ ...form, quorumType: e.target.value })}>
+                <option value="majority">Majority</option>
+                <option value="fixed_count">Fixed Count</option>
+              </select>
+            </div>
+            {form.quorumType === 'fixed_count' && (
+              <div>
+                <label className="text-label block mb-2">Quorum Value</label>
+                <input type="number" min="1" className="input-base" value={form.quorumValue} onChange={(e) => setForm({ ...form, quorumValue: e.target.value })} />
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-theme-border/50">
+            <button type="button" onClick={closeForm} className="btn btn-ghost">Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : editing ? 'Save Changes' : 'Create Event'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Extend deadline modal (FR-IE-07) ── */}
+      <Modal open={!!extendFor} onClose={closeExtend} title={`Extend Deadline — ${extendFor?.eventName || ''}`} size="md">
+        {extendError && <div role="alert" className="mb-4 p-3 rounded-lg bg-rose-500/10 border border-rose-500/25 text-rose-600 text-sm">{extendError}</div>}
+        <form onSubmit={submitExtend} className="space-y-4">
+          <div>
+            <label className="text-label block mb-2">New End Date <span className="text-rose-500">*</span></label>
+            <input type="date" className="input-base" value={extendForm.newEndDate} onChange={(e) => setExtendForm({ ...extendForm, newEndDate: e.target.value })} required />
+          </div>
+          <div>
+            <label className="text-label block mb-2">Justification <span className="text-rose-500">*</span> <span className="text-theme-text0 font-normal">(min 20 chars)</span></label>
+            <textarea className="input-base min-h-[90px]" value={extendForm.justification} onChange={(e) => setExtendForm({ ...extendForm, justification: e.target.value })} placeholder="Why is the deadline being extended?" required />
+          </div>
+          <p className="text-xs text-theme-text0">All registered participants will be notified of the new deadline.</p>
+          <div className="flex justify-end gap-3 pt-4 border-t border-theme-border/50">
+            <button type="button" onClick={closeExtend} className="btn btn-ghost">Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={extendMutation.isPending}>
+              {extendMutation.isPending ? 'Extending…' : 'Extend Deadline'}
             </button>
           </div>
         </form>

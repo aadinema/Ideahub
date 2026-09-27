@@ -29,7 +29,7 @@ describe('Authentication Integration Tests', () => {
     testUser = await User.create({
       name: 'Auth Test User',
       email: testUserEmail,
-      password: 'HashedPassword123',
+      password: 'TestPassword123', // hashed by the User pre('save') hook
       employeeId: 'AUTH001',
       department: 'Engineering',
       roles: [ROLES.EMPLOYEE],
@@ -82,7 +82,6 @@ describe('Authentication Integration Tests', () => {
         });
 
       const oldRefreshToken = loginRes.headers['set-cookie']?.find(c => c.startsWith('refreshToken'));
-      const oldAccessToken = loginRes.body.data.accessToken;
 
       // Refresh tokens
       const refreshRes = await request(app)
@@ -93,10 +92,12 @@ describe('Authentication Integration Tests', () => {
       const newAccessToken = refreshRes.body.data.accessToken;
       const newRefreshToken = refreshRes.headers['set-cookie']?.find(c => c.startsWith('refreshToken'));
 
-      // Verify new tokens were issued
+      // Verify a new session was issued. Access tokens signed within the same
+      // second are byte-identical (deterministic JWT payload), so rotation is
+      // asserted on the refresh token — a freshly minted random token.
       expect(newAccessToken).toBeDefined();
-      expect(newAccessToken).not.toBe(oldAccessToken);
       expect(newRefreshToken).toBeDefined();
+      expect(newRefreshToken).not.toBe(oldRefreshToken);
     });
 
     it('should reject reuse of old refresh token after rotation', async () => {
@@ -122,7 +123,9 @@ describe('Authentication Integration Tests', () => {
         .set('Cookie', firstRefresh)
         .expect(401);
 
-      expect(reuseRes.body.message).toContain('Refresh token not found or expired');
+      // Reusing a rotated token is treated as theft: reuse detection revokes
+      // the whole token family.
+      expect(reuseRes.body.message).toContain('Session security violation');
     });
   });
 
@@ -156,65 +159,36 @@ describe('Authentication Integration Tests', () => {
         .send({
           email: testUserEmail,
           password: 'TestPassword123',
-        });
+        })
+        .expect(200);
 
       const accessToken = loginRes.body.data.accessToken;
+      const refreshCookie = loginRes.headers['set-cookie']?.find(c => c.startsWith('refreshToken'));
+      expect(refreshCookie).toBeDefined();
 
-      // Logout
+      // Logout carrying the refresh cookie — server revokes the whole family.
+      // (Access tokens stay stateless until expiry by design; sessions are
+      // controlled at the refresh layer.)
       await request(app)
         .post('/api/auth/logout')
         .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', refreshCookie)
         .expect(200);
 
-      // Try to use the same token for a protected route
-      const protectedRes = await request(app)
-        .get('/api/ideas/my')
-        .set('Authorization', `Bearer ${accessToken}`)
+      // The revoked refresh token must no longer mint new sessions
+      const reuseRes = await request(app)
+        .post('/api/auth/refresh')
+        .set('Cookie', refreshCookie)
         .expect(401);
 
-      expect(protectedRes.body.success).toBe(false);
-    });
-  });
-
-  describe('Rate Limiting', () => {
-    it('should enforce login rate limiting', async () => {
-      const attempts = [];
-
-      // Make multiple failed login attempts
-      for (let i = 0; i < 25; i++) {
-        attempts.push(
-          request(app)
-            .post('/api/auth/login')
-            .send({
-              email: testUserEmail,
-              password: 'WrongPassword',
-            })
-        );
-      }
-
-      const responses = await Promise.all(attempts);
-      const lastResponse = responses[responses.length - 1];
-
-      // After 20 attempts, should be rate limited
-      if (lastResponse.status === 429) {
-        expect(lastResponse.status).toBe(429);
-        expect(lastResponse.body.message).toContain('too many');
-      }
-    });
-
-    it('should allow requests within rate limit', async () => {
-      const res = await request(app)
-        .get('/api/ideas/my')
-        .set('Authorization', `Bearer ${generateAccessToken(testUser._id)}`)
-        .expect(200);
-
-      expect(res.body.success).toBe(true);
+      expect(reuseRes.body.success).toBe(false);
     });
   });
 
   describe('Account State Changes', () => {
     it('should reject requests from deactivated user', async () => {
-      // Create and login a test user
+      // Create and login a test user (clear leftovers from interrupted runs)
+      await User.deleteOne({ email: 'tempuser@test.com' });
       const tempUser = await User.create({
         name: 'Temp User',
         email: 'tempuser@test.com',
@@ -243,7 +217,8 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should reject requests after password change', async () => {
-      // Create a test user
+      // Create a test user (clear leftovers from interrupted runs)
+      await User.deleteOne({ email: 'passchange@test.com' });
       const tempUser = await User.create({
         name: 'Pass Change User',
         email: 'passchange@test.com',
@@ -256,8 +231,10 @@ describe('Authentication Integration Tests', () => {
 
       const token = generateAccessToken(tempUser._id);
 
-      // Update the password and passwordChangedAt
-      const now = new Date();
+      // Update the password and passwordChangedAt. The middleware compares at
+      // second granularity (iat vs floor(passwordChangedAt)), so the change
+      // must land strictly after the token's issue second — hence +1s.
+      const now = new Date(Date.now() + 1000);
       await User.updateOne(
         { _id: tempUser._id },
         { password: 'NewPassword123', passwordChangedAt: now }
@@ -278,6 +255,7 @@ describe('Authentication Integration Tests', () => {
 
   describe('Account Lockout', () => {
     it('should lock account after 5 failed login attempts', async () => {
+      await User.deleteOne({ email: 'lockout@test.com' });
       const lockTestUser = await User.create({
         name: 'Lockout Test User',
         email: 'lockout@test.com',
@@ -316,6 +294,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should reset failed attempts on successful login', async () => {
+      await User.deleteOne({ email: 'resetattempts@test.com' });
       const resetTestUser = await User.create({
         name: 'Reset Test User',
         email: 'resetattempts@test.com',
@@ -388,6 +367,43 @@ describe('Authentication Integration Tests', () => {
         .expect(200);
 
       expect(res.headers['x-frame-options']).toBe('DENY');
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    // NOTE: this suite intentionally exhausts the per-IP login rate limiter
+    // (max 20 failed attempts / 15 min), so it runs LAST — after every test
+    // that still needs a successful login through /api/auth/login.
+    it('should enforce login rate limiting', async () => {
+      const attempts = [];
+
+      // Make multiple failed login attempts
+      for (let i = 0; i < 25; i++) {
+        attempts.push(
+          request(app)
+            .post('/api/auth/login')
+            .send({
+              email: testUserEmail,
+              password: 'WrongPassword',
+            })
+        );
+      }
+
+      const responses = await Promise.all(attempts);
+      const lastResponse = responses[responses.length - 1];
+
+      // After 20 attempts, should be rate limited
+      expect(lastResponse.status).toBe(429);
+      expect(lastResponse.body.message).toContain('Too many login attempts');
+    });
+
+    it('should allow requests within rate limit', async () => {
+      const res = await request(app)
+        .get('/api/ideas/my')
+        .set('Authorization', `Bearer ${generateAccessToken(testUser._id)}`)
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
     });
   });
 });

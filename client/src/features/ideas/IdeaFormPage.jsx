@@ -59,6 +59,7 @@ const DRAFT_FIELDS = [
   'title', 'category', 'ideaType', 'department', 'initiative', 'keywords',
   'problemStatement', 'currentChallenges', 'proposedSolution',
   'innovationDescription', 'expectedOutcome', 'benefitTypes', 'linkedEventId',
+  'estimatedValueINR',
 ]
 
 const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, '').replace(/&\w+;/g, ' ').trim()
@@ -77,6 +78,7 @@ const emptyForm = {
   expectedOutcome:      '',
   benefitTypes:         [],
   linkedEventId:        '',
+  estimatedValueINR:    '',
 }
 
 // Convert the form's keywords string into the array the draft API expects.
@@ -123,6 +125,21 @@ export default function IdeaFormPage() {
     queryFn: () => eventsAPI.explore({ status: EVENT_STATUS.ACTIVE }).then((r) => r.data.data),
   })
 
+  // ── Deadline guard (FR-IE-06): resolve the linked event even when it has
+  //    closed and therefore dropped out of the active list. ──
+  const linkedEventInList = activeEvents.find((e) => e._id === form.linkedEventId)
+  const { data: linkedEventDetail } = useQuery({
+    queryKey: ['linkedEvent', form.linkedEventId],
+    queryFn: () => eventsAPI.getById(form.linkedEventId).then((r) => r.data.data),
+    enabled: !!form.linkedEventId && !linkedEventInList,
+    retry: false,
+  })
+  const effectiveEvent = linkedEventInList || linkedEventDetail
+  const eventDeadlinePassed = !!effectiveEvent && (
+    effectiveEvent.status === EVENT_STATUS.CLOSED ||
+    new Date(effectiveEvent.endDate).getTime() < Date.now()
+  )
+
   useEffect(() => {
     if (existingIdea) {
       setForm({
@@ -139,6 +156,7 @@ export default function IdeaFormPage() {
         expectedOutcome:      existingIdea.expectedOutcome   || '',
         benefitTypes:         existingIdea.benefitTypes      || [],
         linkedEventId:        existingIdea.linkedEventId?._id || '',
+        estimatedValueINR:    existingIdea.estimatedValueINR ?? '',
       })
     }
   }, [existingIdea])
@@ -274,6 +292,11 @@ export default function IdeaFormPage() {
     if (stripHtml(form.problemStatement).length < MIN_CHARS.PROBLEM_STATEMENT)
       errs.problemStatement = `Problem statement must be at least ${MIN_CHARS.PROBLEM_STATEMENT} characters`
     if (form.benefitTypes.length === 0) errs.benefitTypes = 'Select at least one benefit type'
+    // Estimated value is optional, but when given must be a non-negative number
+    if (form.estimatedValueINR !== '') {
+      const num = Number(form.estimatedValueINR)
+      if (Number.isNaN(num) || num < 0) errs.estimatedValueINR = 'Enter a valid amount (0 or more)'
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -605,6 +628,34 @@ export default function IdeaFormPage() {
                 <AlertCircle className="w-3 h-3" /> {errors.benefitTypes}
               </p>
             )}
+
+            {/* Estimated (potential) value — optional, feeds the CEO Business
+                Impact view. Clearly an ESTIMATE, never presented as realized. */}
+            <div className="mt-6 pt-6 border-t border-theme-border/50 max-w-sm">
+              <label htmlFor="idea-estimatedValueINR" className="text-label block mb-2">
+                Estimated Business Value (₹)
+              </label>
+              <input
+                id="idea-estimatedValueINR"
+                type="number"
+                min="0"
+                step="1000"
+                inputMode="numeric"
+                value={form.estimatedValueINR}
+                onChange={(e) => handleChange('estimatedValueINR', e.target.value)}
+                placeholder="e.g. 250000"
+                aria-describedby="idea-estimatedValueINR-hint"
+                aria-invalid={errors.estimatedValueINR ? 'true' : undefined}
+                className={`input-base ${errors.estimatedValueINR ? 'border-rose-500/60' : ''}`}
+              />
+              <p id="idea-estimatedValueINR-hint" className="text-xs text-theme-text0 mt-1.5">
+                Optional · Your best estimate of annual value. Executives compare this
+                against realized benefits recorded after implementation.
+              </p>
+              {errors.estimatedValueINR && (
+                <p role="alert" className="text-xs text-rose-500 mt-1">{errors.estimatedValueINR}</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -690,6 +741,19 @@ export default function IdeaFormPage() {
             <h2 className="text-heading text-base text-theme-text mb-1">5. Link to Ideathon Event</h2>
             <p className="text-sm text-theme-text0 mb-6">Optionally link this idea to an active Ideathon event (FR-02-07).</p>
 
+            {/* FR-IE-06 — post-deadline banner */}
+            {eventDeadlinePassed && (
+              <div role="alert" className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  The linked event “{effectiveEvent.eventName}” closed on{' '}
+                  {new Date(effectiveEvent.endDate).toLocaleDateString('en-IN')}. Idea submissions for this
+                  event are no longer accepted.
+                  {isEdit ? ' You can still edit this existing idea.' : ' Please unlink the event or choose another.'}
+                </span>
+              </div>
+            )}
+
             {activeEvents.length === 0 ? (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-theme-accent/10 border border-theme-accent/20 text-theme-accent text-sm">
                 <Info className="w-4 h-4 flex-shrink-0" />
@@ -761,7 +825,8 @@ export default function IdeaFormPage() {
             <button
               type="submit"
               id="btn-submit-idea-form"
-              disabled={submitMutation.isPending}
+              disabled={submitMutation.isPending || (eventDeadlinePassed && !isEdit)}
+              title={eventDeadlinePassed && !isEdit ? 'The linked event has closed — submissions are no longer accepted.' : undefined}
               className="btn btn-primary"
             >
               {submitMutation.isPending

@@ -57,6 +57,9 @@ export default function EventDetailPage() {
     ? participants.some((p) => (p?._id || p)?.toString() === currentUser._id.toString())
     : false;
   const isClosed = event?.status === EVENT_STATUS.CLOSED;
+  const deadlinePassed = !!event && new Date(event.endDate).getTime() < Date.now();
+  // FR-IE-06 — submissions stop once the event is closed or the deadline passes.
+  const submissionsClosed = isClosed || deadlinePassed;
   const isFull = event?.maxParticipants && participants.length >= event.maxParticipants;
 
   return (
@@ -119,8 +122,19 @@ export default function EventDetailPage() {
             {event.ideaCategory && <Meta icon={Tag} label="Category" value={label(event.ideaCategory)} />}
           </div>
 
+          {/* FR-IE-06 — closed / past-deadline notice */}
+          {submissionsClosed && (
+            <div role="alert" className="flex items-start gap-3 p-4 mb-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 text-sm">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                This event {isClosed ? 'has been closed' : 'deadline has passed'}. Idea submissions are no longer
+                accepted, but you can still view its leaderboard.
+              </span>
+            </div>
+          )}
+
           {/* Join CTA */}
-          {!isClosed && (
+          {!submissionsClosed && (
             <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => joinMutation.mutate()}

@@ -206,6 +206,32 @@ const resolvers = {
     body: `The Ideathon "${event.eventName}" closes in 48 hours. Submit your ideas now!`,
     link: `/events/${event._id}`,
   }),
+
+  // FR-IE-03 — join confirmation to the registering employee.
+  [NOTIFICATION_EVENT.IDEATHON_JOIN_CONFIRMED]: ({ event, user }) => ({
+    recipients: [{ userId: user._id, email: user.email, name: user.name }],
+    emailTemplateKey: 'generic',
+    emailData: {
+      subject: `✅ You're registered: ${event.eventName}`,
+      body: `<p>You have successfully registered for <strong>"${event.eventName}"</strong>. The event runs until ${new Date(event.endDate).toDateString()}.</p><a href="${process.env.CLIENT_ORIGIN}/events/${event._id}">View event →</a>`,
+    },
+    title: `Registered: ${event.eventName}`,
+    body: `Your registration for "${event.eventName}" is confirmed. It closes ${new Date(event.endDate).toDateString()}.`,
+    link: `/events/${event._id}`,
+  }),
+
+  // FR-IE-07 — deadline extension notice to all registered participants.
+  [NOTIFICATION_EVENT.IDEATHON_EXTENDED]: ({ event, participants }) => ({
+    recipients: participants.map((u) => ({ userId: u._id, email: u.email, name: u.name })),
+    emailTemplateKey: 'generic',
+    emailData: {
+      subject: `📅 Deadline extended: ${event.eventName}`,
+      body: `<p>The deadline for <strong>"${event.eventName}"</strong> has been extended to ${new Date(event.endDate).toDateString()}. You now have more time to submit your ideas.</p><a href="${process.env.CLIENT_ORIGIN}/events/${event._id}">View event →</a>`,
+    },
+    title: `Deadline extended: ${event.eventName}`,
+    body: `"${event.eventName}" now closes ${new Date(event.endDate).toDateString()}.`,
+    link: `/events/${event._id}`,
+  }),
 };
 
 // ---------------------------------------------------------------------------

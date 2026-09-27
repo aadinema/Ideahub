@@ -45,8 +45,15 @@ const EVENT_UPDATABLE_FIELDS = [
 exports.exploreEvents = async (req, res, next) => {
   try {
     const { status, type, initiative, category } = req.query;
-    
-    // Base filter: published events, or restricted events where user's dept is targeted
+
+    // FR-IE-04 — Type / Initiative / Business Category accept comma-separated
+    // multi-select values (e.g. `type=ideathon,workshop`).
+    const multi = (v) =>
+      typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
+    // Base filter: published events, or restricted events where user's dept is targeted.
+    // Drafts are never visible through the employee-facing explore endpoint
+    // (FR-IE-02 — draft = admin only; admins use GET /api/events).
     const query = {
       $or: [
         { visibility: EVENT_VISIBILITY.PUBLISHED },
@@ -58,13 +65,92 @@ exports.exploreEvents = async (req, res, next) => {
       status: { $ne: EVENT_STATUS.DRAFT }
     };
 
-    if (status) query.status = status;
-    if (type) query.eventType = type;
-    if (initiative) query.initiative = initiative;
-    if (category) query.ideaCategory = category;
+    if (status && status !== EVENT_STATUS.DRAFT) query.status = status;
+
+    const types = multi(type);
+    if (types.length) query.eventType = types.length > 1 ? { $in: types } : types[0];
+
+    const initiatives = multi(initiative);
+    if (initiatives.length) query.initiative = initiatives.length > 1 ? { $in: initiatives } : initiatives[0];
+
+    const categories = multi(category);
+    if (categories.length) query.ideaCategory = categories.length > 1 ? { $in: categories } : categories[0];
 
     const events = await IdeathonEvent.find(query)
       .sort({ startDate: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, data: events });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// GET /api/events/facets
+// Distinct Initiative / Business Category values available to this user —
+// powers the FR-IE-04 multi-select filter options.
+// ---------------------------------------------------------------------------
+exports.getEventFacets = async (req, res, next) => {
+  try {
+    const visibilityFilter = {
+      $or: [
+        { visibility: EVENT_VISIBILITY.PUBLISHED },
+        { visibility: EVENT_VISIBILITY.RESTRICTED, targetDepartments: req.user.department },
+      ],
+      status: { $ne: EVENT_STATUS.DRAFT },
+    };
+
+    const [initiatives, categories] = await Promise.all([
+      IdeathonEvent.distinct('initiative', visibilityFilter),
+      IdeathonEvent.distinct('ideaCategory', visibilityFilter),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        initiatives: initiatives.filter(Boolean).sort(),
+        categories: categories.filter(Boolean).sort(),
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// GET /api/events/mine — FR-IE-03
+// Events the current user has registered for (My Events).
+// ---------------------------------------------------------------------------
+exports.getMyEvents = async (req, res, next) => {
+  try {
+    const events = await IdeathonEvent.find({
+      participants: req.user._id,
+      status: { $ne: EVENT_STATUS.DRAFT },
+    })
+      .sort({ startDate: -1 })
+      .lean();
+
+    res.status(200).json({ success: true, data: events });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ---------------------------------------------------------------------------
+// GET /api/events — Admin list (includes drafts, all visibilities)
+// ---------------------------------------------------------------------------
+exports.listEvents = async (req, res, next) => {
+  try {
+    const { status, visibility } = req.query;
+    const query = {};
+    if (status) query.status = status;
+    if (visibility) query.visibility = visibility;
+
+    const events = await IdeathonEvent.find(query)
+      .sort({ createdAt: -1 })
+      .populate('participants', 'name department email')
+      .populate('createdBy', 'name')
       .lean();
 
     res.status(200).json({ success: true, data: events });
@@ -110,6 +196,12 @@ exports.joinEvent = async (req, res, next) => {
       entityType: 'IdeathonEvent',
       entityId: event._id.toString(),
       metadata: { joined: true }
+    });
+
+    // FR-IE-03 — join confirmation sent to the registering employee.
+    notificationService.trigger(NOTIFICATION_EVENT.IDEATHON_JOIN_CONFIRMED, {
+      event,
+      user: req.user,
     });
 
     res.status(200).json({ success: true, message: 'Successfully joined event.' });
@@ -315,6 +407,8 @@ exports.extendEvent = async (req, res, next) => {
       extendedBy: req.user._id
     });
     event.endDate = new Date(newEndDate);
+    // A later deadline warrants a fresh 48h closing reminder (FRD §11).
+    event.closingReminderSent = false;
     if (event.status === EVENT_STATUS.CLOSED && event.endDate > new Date()) {
       event.status = EVENT_STATUS.ACTIVE; // Re-activate if it was closed
     }
@@ -329,8 +423,44 @@ exports.extendEvent = async (req, res, next) => {
       metadata: { action: 'extend_deadline', newEndDate, justification }
     });
 
-    // No dedicated "event_extended" notification exists in NOTIFICATION_MATRIX;
-    // participants are informed of the new deadline via the event page / dashboard.
+    // FR-IE-07 — extension must notify all registered participants.
+    const User = require('../models/User');
+    const participants = await User.find({ _id: { $in: event.participants } })
+      .select('_id name email')
+      .lean();
+    if (participants.length > 0) {
+      notificationService.trigger(NOTIFICATION_EVENT.IDEATHON_EXTENDED, {
+        event,
+        participants,
+      });
+    }
+
+    res.status(200).json({ success: true, data: event });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Close Event (Admin only) — FR-AD-03
+exports.closeEvent = async (req, res, next) => {
+  try {
+    const event = await IdeathonEvent.findById(req.params.id);
+    if (!event) return next(new AppError('Event not found', 404));
+
+    if (event.status === EVENT_STATUS.CLOSED) {
+      return res.status(200).json({ success: true, data: event, message: 'Event is already closed.' });
+    }
+
+    event.status = EVENT_STATUS.CLOSED;
+    await event.save();
+
+    await auditService.log({
+      actorId: req.user._id,
+      action: AUDIT_ACTION.UPDATE,
+      entityType: 'IdeathonEvent',
+      entityId: event._id.toString(),
+      metadata: { action: 'close_event' },
+    });
 
     res.status(200).json({ success: true, data: event });
   } catch (err) {

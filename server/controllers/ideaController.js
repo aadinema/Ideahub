@@ -31,6 +31,7 @@ const {
   AUDIT_ACTION,
   PAGINATION,
   MIN_CHARS,
+  EVENT_STATUS,
 } = require('../../shared/constants');
 
 // ---------------------------------------------------------------------------
@@ -73,10 +74,14 @@ exports.createIdea = async (req, res, next) => {
       );
     }
 
-    // Validate linked event is active (if provided) — FR-02-07
+    // Validate linked event is active (if provided) — FR-02-07 / FR-IE-06.
+    // An EXTENDED event is still open for submissions (FR-IE-07).
     if (body.linkedEventId) {
       const event = await IdeathonEvent.findById(body.linkedEventId);
-      if (!event || event.status !== 'active') {
+      if (
+        !event ||
+        ![EVENT_STATUS.ACTIVE, EVENT_STATUS.EXTENDED].includes(event.status)
+      ) {
         return next(new AppError('Selected Ideathon event is not currently active.', 400));
       }
       if (event.endDate < new Date()) {
@@ -105,6 +110,11 @@ exports.createIdea = async (req, res, next) => {
       benefitTypes: Array.isArray(body.benefitTypes)
         ? body.benefitTypes
         : [body.benefitTypes].filter(Boolean),
+      // Optional estimate — empty string from the form means "not estimated"
+      estimatedValueINR:
+        body.estimatedValueINR === '' || body.estimatedValueINR === undefined
+          ? null
+          : Number(body.estimatedValueINR),
       attachments,
       linkedEventId: body.linkedEventId || null,
       submittedBy: req.user._id,
@@ -155,13 +165,23 @@ exports.getIdeas = async (req, res, next) => {
     const skip = (pageNum - 1) * limitNum;
 
     const filter = {};
-    if (status) filter.status = status;
+    // Comma-separated list supported for executive drill-downs (CEO-01);
+    // single values behave exactly as before.
+    if (status) {
+      const list = String(status).split(',').map((s) => s.trim()).filter(Boolean);
+      filter.status = list.length > 1 ? { $in: list } : list[0];
+    }
     if (department) filter.department = department;
     if (linkedEventId) filter.linkedEventId = linkedEventId;
     if (category) filter.category = category;
 
-    // Non-admin employees see only their own ideas + published
-    if (!req.user.roles.includes(ROLES.ADMIN) && !req.user.roles.includes(ROLES.INNOVATION_COMMITTEE)) {
+    // Non-admin employees see only their own ideas + published.
+    // CEO (C-Suite) has org-wide READ access for executive drill-downs (CEO-01).
+    const canSeeAll =
+      req.user.roles.includes(ROLES.ADMIN) ||
+      req.user.roles.includes(ROLES.INNOVATION_COMMITTEE) ||
+      req.user.roles.includes(ROLES.CEO);
+    if (!canSeeAll) {
       const orConditions = [
         { submittedBy: req.user._id },
         { status: IDEA_STATUS.PUBLISHED },
@@ -314,11 +334,13 @@ exports.getIdeaById = async (req, res, next) => {
 
     if (!idea) return next(new AppError('Idea not found', 404));
 
-    // Access control: non-admins/committee can only see own or published ideas
+    // Access control: non-admins/committee can only see own or published ideas.
+    // CEO (C-Suite) has org-wide READ access for executive drill-downs (CEO-01).
     const canViewAll =
       req.user.roles.includes(ROLES.ADMIN) ||
       req.user.roles.includes(ROLES.INNOVATION_COMMITTEE) ||
-      req.user.roles.includes(ROLES.DEPT_INNOVATION_TEAM);
+      req.user.roles.includes(ROLES.DEPT_INNOVATION_TEAM) ||
+      req.user.roles.includes(ROLES.CEO);
 
     const isOwn = idea.submittedBy?._id?.toString() === req.user._id.toString();
     const isSupervisor = idea.supervisorId?._id?.toString() === req.user._id.toString();
@@ -355,11 +377,15 @@ exports.autoSaveDraft = async (req, res, next) => {
       'title', 'category', 'ideaType', 'department', 'initiative', 'keywords',
       'problemStatement', 'currentChallenges', 'proposedSolution',
       'innovationDescription', 'expectedOutcome', 'benefitTypes', 'linkedEventId',
+      'estimatedValueINR',
     ];
 
     allowedFields.forEach((field) => {
       if (req.body[field] !== undefined) {
-        idea[field] = req.body[field];
+        idea[field] =
+          field === 'estimatedValueINR' && req.body[field] === ''
+            ? null
+            : req.body[field];
       }
     });
 
@@ -413,6 +439,21 @@ exports.submitIdea = async (req, res, next) => {
     }
     if (!idea.title || !idea.category || !idea.department) {
       return next(new AppError('Title, category, and department are required.', 422));
+    }
+
+    // FR-IE-06 — block submission if the linked event has closed or its
+    // deadline passed since the draft was created.
+    if (idea.linkedEventId) {
+      const event = await IdeathonEvent.findById(idea.linkedEventId).lean();
+      const eventOpen =
+        event &&
+        [EVENT_STATUS.ACTIVE, EVENT_STATUS.EXTENDED].includes(event.status) &&
+        event.endDate >= new Date();
+      if (!eventOpen) {
+        return next(
+          new AppError('Idea submission for this event has closed (FR-IE-06).', 422)
+        );
+      }
     }
 
     await _submitIdea(idea, req.user, req.ip);

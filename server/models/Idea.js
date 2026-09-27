@@ -101,6 +101,16 @@ const ideaSchema = new mongoose.Schema(
       },
     },
 
+    // Submitter's estimate of annual business value in INR (CEO-02).
+    // Optional — null means "not estimated" (never treated as zero).
+    // Distinct from Benefit.financial, which records REALIZED value after
+    // implementation. Estimated ≠ Realized; the CEO dashboard labels both.
+    estimatedValueINR: {
+      type: Number,
+      default: null,
+      min: [0, 'Estimated value cannot be negative'],
+    },
+
     // Section FR-02-04
     attachments: {
       type: [attachmentSchema],
