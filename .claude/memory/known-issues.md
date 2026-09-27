@@ -220,21 +220,39 @@ future publish date/time vs expiry-date-only. `ASSUMPTIONS.md` assumes `expiryDa
 only + immediate publish — **assumption only, not confirmed**.
 
 
-### KI-014 — No automated accessibility scoring in the project
+### KI-014 — Automated accessibility scoring (was: none) — FIXED
+**Status:** FIXED (2026-09-27)
+**Date:** 2026-09-27
+Was: no a11y tooling; the audit's "real a11y scores" deliverable was unmet and all
+findings came from a hand-written static scan.
+Fix: added devDependency **`axe-core`** (^4.13.0) plus `client/src/test/axe.js` and
+`client/src/__tests__/a11y.test.jsx` — 7 axe checks over Login, Dashboard, IdeaList,
+Admin, EmptyState/ErrorState, Modal, Toast. All pass (**26/26** total client tests).
+First run found a real WCAG 4.1.2 violation (`aria-prohibited-attr`: `aria-label`
+on a roleless `<div>` in `KpiCard`) — fixed.
+**Limits:** runs under jsdom, so `color-contrast` and `region` rules are disabled;
+colour contrast + full-page landmarks still require Lighthouse / axe DevTools in a
+real browser. Lighthouse numeric scores are still uncollected.
+
+_Original finding (now resolved):_ no `axe-core`/`jest-axe`/`eslint-plugin-jsx-a11y`/
+Lighthouse existed and nothing gated a11y. Chosen fix was axe-core in the existing
+vitest suite (not a full eslint plugin), matching the earlier "cheap path" note.
+
+### KI-019 — CI `npm ci` cannot succeed: lockfiles are gitignored/untracked
 **Status:** OPEN
 **Date:** 2026-09-27
-> Renumbered from KI-012 on 2026-09-27 (re-audit): the id `KI-012` was already
-> taken by the FIXED Router-double-wrap entry above, so this entry's number was a
-> duplicate. No content changed; see CHANGELOG 2026-09-27.
-The UI/UX audit was asked to report real accessibility scores, but **no a11y tooling is
-installed** — no `axe-core` / `jest-axe` / `vitest-axe` / `eslint-plugin-jsx-a11y` /
-Lighthouse in any of the three `package.json` files, and nothing in CI runs an a11y gate.
-Everything found so far came from a hand-written static scan, which catches a strict
-subset of what axe reports (it will not see contrast-on-rendered-DOM, role/name
-computation, focus order, or landmark structure).
-Not started, because it needs a dependency and the user has preferred zero new deps
-where reasonable. When approved, the cheap path is `vitest-axe` in the existing vitest
-suite (harness already in `client/src/test/setup.js`) rather than a full eslint plugin.
+`.github/workflows/ci.yml` installs with `cd client && npm ci` (and server/e2e) and
+caches on `client|server|e2e/package-lock.json`, but `.gitignore` (lines 10–11)
+ignores `package-lock.json`/`yarn.lock` and **no lockfile is tracked**
+(`git ls-files | grep package-lock` → none). On a fresh CI checkout `npm ci` fails
+with "can only install with an existing package-lock.json". So the whole client/
+server/e2e install — and therefore the client test gate (including the new axe-core
+a11y gate) — cannot run in CI as written.
+This is **pre-existing** (surfaced while adding axe-core; not caused by it) and
+touches KI-001's "CI repaired" claim. Two options, needs a decision:
+(a) track the three lockfiles (remove the `.gitignore` rule, `git add -f`), or
+(b) switch CI to `npm install` (less reproducible). Option (a) is recommended.
+No change made — repo-hygiene decision, not a UI change.
 
 ### KI-013 — Server tests and E2E cannot be run from this sandbox
 **Status:** OPEN (environment limitation, not a code defect)

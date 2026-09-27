@@ -48,10 +48,15 @@ Folders: `src/features/<domain>/`, `src/components/`, `src/layouts/`, `src/api/`
 - `client/src/__tests__/pages.smoke.test.jsx` (added 2026-09-27, re-audit) — render
   smoke tests for the pages that had crashed at mount (KI-015/016/017). Guards the
   TDZ `usePageTitle` pattern and the missing-import/dead-error-branch classes.
+- `client/src/__tests__/a11y.test.jsx` (added 2026-09-27, KI-014) — real axe-core
+  checks on Login, Dashboard, IdeaList, Admin, EmptyState/ErrorState, Modal, Toast.
+  Helper: `client/src/test/axe.js`. jsdom disables `color-contrast` (no paint) and
+  `region`; all other rules run.
 The earlier note that these tests never ran is **stale** — see KI-003. As of
 2026-09-27: `client/package.json` has `test`/`test:watch`/`test:coverage` scripts,
 `client/vitest.config.js` + `client/src/test/setup.js` exist, `jsdom` is installed,
-and `cd client && npm test` → **19/19 passing** (13 auth + 6 smoke). CI gates it.
+and `cd client && npm test` → **26/26 passing** (13 auth + 6 smoke + 7 a11y).
+`axe-core` is a **devDependency only** (verified absent from the prod bundle). CI gates it.
 
 ## Shared UI state layer (added 2026-09-27, UI/UX audit Phase 2; completed Phase 3)
 - `components/ErrorState.jsx` / `EmptyState.jsx` / `Skeleton.jsx` / `Toast.jsx`;
@@ -106,10 +111,13 @@ All defined in `client/src/index.css` (`:root` + `[data-theme="dark"]` + `@theme
 - Server Jest and the Playwright smoke **cannot** run locally: the sandbox blocks local
   sockets (EPERM on `net.connect(27017)`) and child-process spawn, so MongoDB and both
   dev servers are unreachable. Both are gated in `.github/workflows/ci.yml`.
-- **No axe or Lighthouse numbers exist for this project.** No a11y tooling is installed
-  and the npm registry is blocked here, so the Phase-1 audit's "real a11y scores"
-  deliverable is still unmet. The a11y work done so far came from a hand-written static
-  scan. Do not restate those findings as an axe score.
+- **axe-core now runs in the client suite (2026-09-27).** `axe-core` is a devDependency;
+  `client/src/__tests__/a11y.test.jsx` checks Login, Dashboard, IdeaList, Admin,
+  EmptyState/ErrorState, Modal and Toast and asserts **zero violations** (it caught a
+  real WCAG 4.1.2 `aria-prohibited-attr` on KpiCard). **Caveat:** it runs under jsdom,
+  so `color-contrast` is disabled (no layout/paint) and `region` is disabled for
+  component fragments. Colour contrast and full-page landmark checks still need
+  Lighthouse / axe DevTools in a real browser — no Lighthouse score exists yet.
 - All 36 genuinely unlabelled `<label>` elements are now paired with `htmlFor`/`id`. The
   remaining `<label>`s without `htmlFor` are all *wrapping* labels (the control is a
   child) or point at `RichTextEditor`, which takes its own `ariaLabel` — both are valid.

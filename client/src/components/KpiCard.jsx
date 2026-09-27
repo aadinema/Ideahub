@@ -12,14 +12,13 @@ export default function KpiCard({ icon: Icon, label, value, color, loading, anim
     <div
       className="glass rounded-xl p-4 flex flex-col gap-3 transition-all duration-200 hover:border-theme-border"
       style={{ opacity: visible ? 1 : 0, transform: visible ? 'none' : 'translateY(8px)', transition: `opacity 0.5s ease ${animationDelay}ms, transform 0.5s ease ${animationDelay}ms` }}
-      aria-label={`${label}: ${value}`}
     >
       <div className="flex items-center justify-between">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: `color-mix(in srgb, ${color} 12%, transparent)` }}
         >
-          <Icon className="w-4 h-4" style={{ color }} />
+          <Icon className="w-4 h-4" style={{ color }} aria-hidden="true" />
         </div>
       </div>
       {loading ? (

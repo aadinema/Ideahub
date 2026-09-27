@@ -3,6 +3,25 @@
 This file logs both code changes and memory-file changes, newest first.
 Never overwrite history; append entries.
 
+## 2026-09-27 — UI/UX audit, KI-014 FIXED: real axe-core accessibility gate
+
+First automated a11y gate in the project. UI-only; dev-tooling only (no runtime dep).
+- Added devDependency **`axe-core@^4.13.0`** (MIT/MPL-2.0, Deque-maintained). Chose
+  the engine directly over the stale `vitest-axe@0.1.0` wrapper (which pulls
+  chalk/lodash-es/redent and lags vitest 4). Verified **absent from the prod bundle**
+  (`grep` for axe-core signatures → none).
+- `client/src/test/axe.js` helper + `client/src/__tests__/a11y.test.jsx`: 7 axe runs
+  over Login, Dashboard, IdeaList, Admin, EmptyState/ErrorState, Modal, Toast. jsdom
+  disables `color-contrast` (no paint) and `region` (component fragments).
+- **First run found a real WCAG 4.1.2 violation** — `aria-prohibited-attr`:
+  `aria-label` on a roleless `<div>` in `components/KpiCard.jsx` (and the same
+  pattern in `ceoUtils` `KpiTile`'s div branch). Fixed both (the visible label+value
+  already provide the accessible text); KpiCard icon is now `aria-hidden`.
+- Client suite: **26/26 passing** (13 auth + 6 smoke + 7 a11y). `npm run build` ✓.
+  CI already runs `npm test`, so the a11y gate is gated automatically.
+- **Limit:** jsdom can't compute colour contrast; Lighthouse/axe DevTools in a real
+  browser are still needed for that. No Lighthouse numeric score yet.
+
 ## 2026-09-27 — UI/UX audit, KI-018 follow-up: component consolidation
 
 Last KI-018 item. UI-only; no logic change. `npm run build` ✓; `npm test` 19/19 ✓.

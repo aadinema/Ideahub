@@ -168,7 +168,6 @@ export function KpiTile({ icon: Icon, label, value, sub, color, definition, load
     <div
       className={cls}
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.5s ease' }}
-      aria-label={`${label}: ${value}`}
     >
       {body}
     </div>
