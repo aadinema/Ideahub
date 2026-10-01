@@ -1,13 +1,13 @@
-# Graph Report - ideahub  (2026-10-02)
+# Graph Report - ideahub  (2026-09-28)
 
 ## Corpus Check
-- 195 files · ~151,664 words
+- 192 files · ~133,735 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 5 file(s) not represented in the graph (top: (none) 3, .css 1, .example 1)
 
 ## Summary
-- 1792 nodes · 3118 edges · 117 communities (108 shown, 9 thin omitted)
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 151 edges (avg confidence: 0.92)
+- 1664 nodes · 2961 edges · 95 communities (87 shown, 8 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 138 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
@@ -18,7 +18,7 @@
 ## Community Hubs (Navigation)
 - ideaController.js
 - reportController.js
-- ROLES
+- logger.js
 - e2e/package.json
 - usePageTitle
 - src/constants.js
@@ -41,7 +41,7 @@
 - react
 - IdeaFormPage.jsx
 - auth.js
-- User.js
+- eventController.js
 - ref_mongoose
 - EventDetailPage.jsx
 - benefitController.js
@@ -56,15 +56,15 @@
 - Ideahub Mern Masterprompt
 - Integrations
 - package.json
-- express
-- galleryAutoPublish.js
+- ROLES
+- notificationService.js
 - E2E Testing Guide
 - AppError.js
 - IdeaHub Improvement Report
-- workflowService.js
+- User.js
 - App.jsx
 - authorization.test.js
-- 8. Detailed Functional Requirements — Core Platform
+- ideaRoutes.js
 - upload.js
 - ceoDashboardController.js
 - Implementation Plan
@@ -76,7 +76,7 @@
 - seedCeoDemoIdeas.js
 - Phase 3: Auth & Token Handling — Implementation Summary
 - Phase 4: Validation & Uploads — Implementation Summary
-- adminRoutes.js
+- validation.test.js
 - CEO Dashboard — Implementation Report & UX Assessment
 - authorizationService.js
 - devDependencies
@@ -102,48 +102,26 @@
 - devDependencies
 - scripts
 - vite.config.js
-- notificationService.js
-- auditService.js
+- storageService.js
+- AUDIT_ACTION
 - ErrorBoundary
 - setup.js
 - IdeaHub — Agent Instructions
 - IdeaHub Memory
 - businessDays.js
 - RFC-4122
-- IdeaHub Enterprise — Functional Requirement Document
-- benefitRoutes.js
-- authRoutes.js
-- 15. Non-Functional Requirements
-- reportRoutes.js
-- 10. Detailed Functional Requirements — Business Impact & Value
-- 14. Delivery Roadmap
-- galleryRoutes.js
-- 11. Detailed Functional Requirements — Analytics & Executive Reporting
-- 12. Detailed Functional Requirements — Governance, Security & Audit
-- 13. Detailed Functional Requirements — Platform & Ecosystem
-- 1. Executive Summary
-- 2. Scope, Positioning & Relationship to v1.0
-- 9. Detailed Functional Requirements — AI & Intelligence Layer
-- Changes Made
-- ideaStatusGroups.js
-- 16. Assumptions, Dependencies & Constraints
-- 19. Requirement Traceability Matrix
-- 3. Business Vision & Objectives
-- 7. Idea Lifecycle 2.0
-- Document Control
-- sanitize.js
 
 ## God Nodes (most connected - your core abstractions)
 1. `lucide-react` - 43 edges
 2. `usePageTitle()` - 40 edges
 3. `react` - 32 edges
 4. `react-router-dom` - 31 edges
-5. `ROLES` - 28 edges
+5. `ROLES` - 26 edges
 6. `@tanstack/react-query` - 25 edges
-7. `IDEA_STATUS` - 23 edges
-8. `IdeaHub Enterprise — Functional Requirement Document` - 22 edges
-9. `Memory Changelog — IdeaHub` - 21 edges
-10. `API Contract — IdeaHub` - 17 edges
+7. `IDEA_STATUS` - 21 edges
+8. `Memory Changelog — IdeaHub` - 19 edges
+9. `API Contract — IdeaHub` - 16 edges
+10. `ErrorState()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Phase 2 — KI-003 FIXED (client tests wired)` --references--> `App()`  [INFERRED]
@@ -160,23 +138,23 @@
 ## Import Cycles
 - None detected.
 
-## Communities (117 total, 9 thin omitted)
+## Communities (95 total, 8 thin omitted)
 
 ### Community 0 - "ideaController.js"
-Cohesion: 0.12
-Nodes (19): AppError, auditService, autoSaveDraft(), buildAttachments(), createIdea(), deleteIdea(), getIdeaById(), Idea (+11 more)
+Cohesion: 0.05
+Nodes (44): AppError, Idea, { IDEA_STATUS, PAGINATION }, unpublishIdea(), workflowService, AppError, auditService, autoSaveDraft() (+36 more)
 
 ### Community 1 - "reportController.js"
 Cohesion: 0.12
 Nodes (14): exceljs, pdfkit, AppError, auditService, Benefit, DepartmentTarget, ExcelJS, exportReport() (+6 more)
 
-### Community 2 - "ROLES"
+### Community 2 - "logger.js"
 Cohesion: 0.06
-Nodes (33): winston, connectDB(), logger, mongoose, connectDB, logger, seedCategories, seedCeoDemoIdeas (+25 more)
+Nodes (32): winston, connectDB(), logger, mongoose, connectDB, logger, seedCategories, seedCeoDemoIdeas (+24 more)
 
 ### Community 3 - "e2e/package.json"
-Cohesion: 0.07
-Nodes (26): author, dependencies, dotenv, mongoose, description, devDependencies, @playwright/test, @types/node (+18 more)
+Cohesion: 0.06
+Nodes (34): author, dependencies, dotenv, mongoose, description, devDependencies, @playwright/test, @types/node (+26 more)
 
 ### Community 4 - "usePageTitle"
 Cohesion: 0.12
@@ -192,11 +170,11 @@ Nodes (21): Announcement, ANNOUNCEMENT_UPDATABLE, AppError, { AUDIT_ACTION, ALL_
 
 ### Community 7 - "client/package.json"
 Cohesion: 0.10
-Nodes (19): author, description, keywords, license, main, name, type, version (+11 more)
+Nodes (20): author, description, keywords, license, main, name, type, version (+12 more)
 
 ### Community 8 - "server.js"
 Cohesion: 0.05
-Nodes (36): adminRoutes, app, AppError, authLimiter, authRoutes, benefitRoutes, committeeRoutes, connectDB (+28 more)
+Nodes (38): NOTE: This intentionally does NOT HTML-escape string values. Several fields, stripDangerousKeys(), adminRoutes, app, AppError, authLimiter, authRoutes, benefitRoutes (+30 more)
 
 ### Community 9 - "dependencies"
 Cohesion: 0.08
@@ -207,8 +185,8 @@ Cohesion: 0.13
 Nodes (19): ref_crypto, uuid, AppError, { AUDIT_ACTION }, auditService, crypto, generateRawRefreshToken(), jwt (+11 more)
 
 ### Community 11 - "evaluationController.js"
-Cohesion: 0.10
-Nodes (18): AppError, Evaluation, EvaluationCriteria, Idea, { IDEA_STATUS, ALL_EVALUATION_DECISIONS, ROLES, NOTIFICATION_EVENT }, notificationService, rejectIdea(), shortlistIdea() (+10 more)
+Cohesion: 0.12
+Nodes (16): AppError, Evaluation, EvaluationCriteria, Idea, { IDEA_STATUS, ALL_EVALUATION_DECISIONS, ROLES, NOTIFICATION_EVENT }, notificationService, rejectIdea(), shortlistIdea() (+8 more)
 
 ### Community 12 - "a11y.test.jsx"
 Cohesion: 0.07
@@ -228,11 +206,11 @@ Nodes (20): dependencies, bcryptjs, cookie-parser, cors, dotenv, exceljs, expres
 
 ### Community 16 - "CeoDashboardPage.jsx"
 Cohesion: 0.06
-Nodes (69): 5. Dashboard Panels (component inventory, `client/src/features/ceo/`, ~1,756 lines), 2026-09-27, 2026-09-27 — Phase 3 (Delivery Baseline): CI repaired, 2026-09-27 — UI/UX audit, independent re-audit + P0 regression fixes, 2026-09-27 — UI/UX audit, KI-014 FIXED: real axe-core accessibility gate, 2026-09-27 — UI/UX audit, KI-018 follow-up: component consolidation, 2026-09-27 — UI/UX audit, Phase 2 (design foundation), 2026-09-27 — UI/UX audit, Phase 2 (Design Foundation) (+61 more)
+Nodes (66): 5. Dashboard Panels (component inventory, `client/src/features/ceo/`, ~1,756 lines), 2026-09-27, 2026-09-27 — Phase 3 (Delivery Baseline): CI repaired, 2026-09-27 — UI/UX audit, independent re-audit + P0 regression fixes, 2026-09-27 — UI/UX audit, KI-014 FIXED: real axe-core accessibility gate, 2026-09-27 — UI/UX audit, KI-018 follow-up: component consolidation, 2026-09-27 — UI/UX audit, Phase 2 (design foundation), 2026-09-27 — UI/UX audit, Phase 2 (Design Foundation) (+58 more)
 
 ### Community 17 - "dashboardController.js"
-Cohesion: 0.12
-Nodes (18): Announcement, Benefit, cache, computeKPIs(), DepartmentTarget, getCached(), getDepartmentTargets(), getKPIs() (+10 more)
+Cohesion: 0.15
+Nodes (15): Announcement, Benefit, cache, computeKPIs(), DepartmentTarget, getCached(), getDepartmentTargets(), getKPIs() (+7 more)
 
 ### Community 18 - "event.test.js"
 Cohesion: 0.07
@@ -243,16 +221,16 @@ Cohesion: 0.21
 Nodes (11): authAPI, dashboardAPI, notificationsAPI, NotificationBell(), NotificationDropdownContent(), timeAgo(), getInitialTheme(), useTheme() (+3 more)
 
 ### Community 20 - "Idea.js"
-Cohesion: 0.08
-Nodes (23): AppError, Idea, { IDEA_STATUS, PAGINATION }, unpublishIdea(), workflowService, {
+Cohesion: 0.18
+Nodes (9): counterSchema, mongoose, {
   ALL_IDEA_STATUSES,
   IDEA_STATUS,
   ALL_BENEFIT_TYPES,
-}, attachmentSchema, ideaSchema (+15 more)
+}, attachmentSchema, ideaSchema, mongoose, statusHistorySchema, ALL_BENEFIT_TYPES (+1 more)
 
 ### Community 21 - "committeeController.js"
-Cohesion: 0.14
-Nodes (17): DEC-004 — Implementation owner eligibility (rule A), KI-021 — Every committee defer was logged as ADMIN_OVERRIDE — FIXED (2026-10-01), AppError, approveImplementation(), approvePublishing(), authorizationService, Benefit, deferIdea() (+9 more)
+Cohesion: 0.17
+Nodes (14): AppError, approvePublishing(), authorizationService, Benefit, deferIdea(), Evaluation, get360View(), Idea (+6 more)
 
 ### Community 22 - "react"
 Cohesion: 0.23
@@ -266,50 +244,48 @@ Nodes (9): ALLOWED_EXTS, BENEFIT_LABELS, BENEFIT_TYPES, DRAFT_FIELDS, emptyForm,
 Cohesion: 0.10
 Nodes (22): Conventions, Middleware (`server/middleware/`), { ALL_ROLES }, AppError, authorize(), jwt, optionalAuth(), protect() (+14 more)
 
-### Community 25 - "User.js"
-Cohesion: 0.10
-Nodes (19): bcryptjs, AppError, auditService, closeEvent(), createEvent(), Evaluation, {
+### Community 25 - "eventController.js"
+Cohesion: 0.14
+Nodes (13): AppError, auditService, closeEvent(), Evaluation, {
   EVENT_STATUS,
   EVENT_VISIBILITY,
   AUDIT_ACTION,
   IDEA_STATUS,
   NOTIFICATION_EVENT,
   ROLES,
-}, EVENT_UPDATABLE_FIELDS (+11 more)
+}, EVENT_UPDATABLE_FIELDS, extendEvent(), getEventById() (+5 more)
 
 ### Community 26 - "ref_mongoose"
 Cohesion: 0.12
-Nodes (13): ref_mongoose, getLeaderboard(), mongoose, mongoose, mongoose, counterSchema, mongoose, { ALL_MILESTONE_STATUSES, MILESTONE_STATUS } (+5 more)
+Nodes (11): ref_mongoose, getLeaderboard(), mongoose, mongoose, announcementSchema, mongoose, { AUDIT_ACTION }, auditLogSchema (+3 more)
 
 ### Community 27 - "EventDetailPage.jsx"
 Cohesion: 0.38
 Nodes (5): eventsAPI, EventDetailPage(), fmtDate(), label(), STATUS_STYLE
 
 ### Community 28 - "benefitController.js"
-Cohesion: 0.17
-Nodes (15): Authorization, KI-004 — Benefit + implementation object-level authz gaps (report.md §3), AppError, auditService, authorizationService, Benefit, buildAttachments(), createBenefit() (+7 more)
+Cohesion: 0.18
+Nodes (14): KI-004 — Benefit + implementation object-level authz gaps (report.md §3), AppError, auditService, authorizationService, Benefit, buildAttachments(), createBenefit(), endorseBenefit() (+6 more)
 
 ### Community 29 - "shared/constants.js"
-Cohesion: 0.08
-Nodes (25): { ALL_CATEGORY_TYPES }, categorySchema, mongoose, { ALL_TARGET_TYPES }, departmentTargetSchema, mongoose, mongoose, { SLA_BUSINESS_DAYS } (+17 more)
+Cohesion: 0.06
+Nodes (36): { ALL_CATEGORY_TYPES }, categorySchema, mongoose, { ALL_TARGET_TYPES }, departmentTargetSchema, mongoose, { ALL_MILESTONE_STATUSES, MILESTONE_STATUS }, implementationSchema (+28 more)
 
 ### Community 30 - "validators.js"
-Cohesion: 0.06
-Nodes (40): uploadAttachments, { authorize }, eventController, {
-  eventCreateSchema,
-  eventUpdateSchema,
-  eventExtendSchema,
-  idParamSchema,
+Cohesion: 0.07
+Nodes (31): adminController, {
+  adminUpdateUserSchema,
   handleValidationErrors,
-}, express, NOTE: static paths (/explore, /mine, /facets) are declared before the, { ROLES }, router (+32 more)
+  idParamSchema,
+}, { authorize }, express, { ROLES }, router, { authorize }, eventController (+23 more)
 
 ### Community 31 - "AdminDashboardPage.jsx"
 Cohesion: 0.14
 Nodes (12): adminAPI, DEPARTMENTS, emptyEventForm, EVENT_DEPARTMENTS, EVENT_LABEL(), EventsTab(), ROLE_LABEL(), STATUS_BADGE (+4 more)
 
 ### Community 32 - "implementationController.js"
-Cohesion: 0.17
-Nodes (14): KI-005 — Implementation owner eligibility was incomplete, Authorization and authentication, getImplementationOwners(), AppError, auditService, authorizationService, createImplementation(), getImplementationByIdea() (+6 more)
+Cohesion: 0.20
+Nodes (12): Authorization and authentication, AppError, auditService, authorizationService, createImplementation(), getImplementationByIdea(), Idea, { IDEA_STATUS, AUDIT_ACTION, ROLES, NOTIFICATION_EVENT } (+4 more)
 
 ### Community 33 - "Assumptions"
 Cohesion: 0.18
@@ -339,48 +315,54 @@ Nodes (10): 1. AuthProvider Interface, 2. HrmsSyncService Interface, 3. EmailSer
 Cohesion: 0.12
 Nodes (16): author, description, keywords, license, main, name, scripts, test (+8 more)
 
-### Community 40 - "express"
-Cohesion: 0.12
-Nodes (14): express, { authorize }, committeeController, express, { ROLES }, router, { authorize }, evaluationController (+6 more)
+### Community 40 - "ROLES"
+Cohesion: 0.07
+Nodes (26): express, { authorize }, committeeController, express, { ROLES }, router, { authorize }, evaluationController (+18 more)
 
-### Community 41 - "galleryAutoPublish.js"
-Cohesion: 0.10
-Nodes (20): node-cron, autoPublishIdeas(), cron, Idea, { IDEA_STATUS, NOTIFICATION_EVENT }, logger, notificationService, startJob() (+12 more)
+### Community 41 - "notificationService.js"
+Cohesion: 0.06
+Nodes (32): node-cron, autoPublishIdeas(), cron, Idea, { IDEA_STATUS, NOTIFICATION_EVENT }, logger, notificationService, startJob() (+24 more)
 
 ### Community 42 - "E2E Testing Guide"
 Cohesion: 0.05
 Nodes (40): CI Integration, Common Issues, Configuration, Debug Mode, Debugging Failed Tests, E2E Testing Guide, Environment Setup, Headed Mode (+32 more)
 
 ### Community 43 - "AppError.js"
-Cohesion: 0.22
-Nodes (4): AppError, markAsRead(), Notification, AppError
+Cohesion: 0.12
+Nodes (12): express-validator, AppError, markAsRead(), Notification, AppError, authController, { body, validationResult }, express (+4 more)
 
 ### Community 44 - "IdeaHub Improvement Report"
 Cohesion: 0.07
 Nodes (29): 1. Codebase Overview, 2. Frontend Analysis, 3. Backend Analysis, 4. Cross-Cutting Concerns, 5. Prioritized Recommendations, API design and conventions, Architecture, Backend structure (+21 more)
 
-### Community 45 - "workflowService.js"
-Cohesion: 0.13
-Nodes (23): Idea status transitions (verified 2026-10-01), Idea lifecycle workflow defects (found 2026-10-01 by tracing the flow), KI-020 — A returned idea can never be resubmitted — FIXED (2026-10-01), KI-022 — approve-implementation stranded the idea after writing the row — FIXED (2026-10-01), KI-023 — `outcome_monitored` and `closed` are unreachable — OPEN, AppError, auditService, Evaluation (+15 more)
+### Community 45 - "User.js"
+Cohesion: 0.22
+Nodes (7): bcryptjs, createEvent(), mongoose, { ALL_ROLES }, bcrypt, mongoose, userSchema
 
 ### Community 46 - "App.jsx"
 Cohesion: 0.17
 Nodes (12): Routes (`client/src/App.jsx`), reportsAPI, ProtectedRoute(), PublicRoute(), NotFoundPage(), COLORS, EXPORT_FORMATS, ReportsPage() (+4 more)
 
 ### Community 47 - "authorization.test.js"
-Cohesion: 0.08
-Nodes (26): jsonwebtoken, supertest, {
+Cohesion: 0.07
+Nodes (27): jsonwebtoken, supertest, getSuccessStories(), {
   ALL_ENDORSEMENT_STATUSES,
   ENDORSEMENT_STATUS,
-}, benefitSchema, evidenceAttachmentSchema, mongoose, app, generateAccessToken() (+18 more)
+}, benefitSchema, evidenceAttachmentSchema, mongoose, app (+19 more)
 
-### Community 48 - "8. Detailed Functional Requirements — Core Platform"
-Cohesion: 0.13
-Nodes (15): 8.10 Implementation Workspace, 8.11 Pilot / Experiment Stage, 8.12 Employee Recognition, 8.13 Professional Gamification, 8.14 Innovation Challenges, 8.1 AI Pre-Screening & Quality Gate (Stage 0), 8.2 AI Idea Assistant, 8.3 Duplicate Idea Detection (+7 more)
+### Community 48 - "ideaRoutes.js"
+Cohesion: 0.22
+Nodes (8): express, ideaController, {
+  ideaCreateSchema,
+  ideaUpdateSchema,
+  handleValidationErrors,
+  idParamSchema,
+  paginationQuery,
+}, { protect, authorize }, { ROLES }, router, { uploadAttachments }, ideaCreateSchema
 
 ### Community 49 - "upload.js"
-Cohesion: 0.06
-Nodes (35): { defineConfig, devices }, e2e_tests_fixtures_auth_fixture_expect, login(), SEED_USERS, test, ref_aws_sdk_client_s3, ref_dotenv, ref_fs (+27 more)
+Cohesion: 0.09
+Nodes (23): ref_aws_sdk_client_s3, multer, ref_multer_s3, AppError, createUploadMiddleware(), fileFilter(), fs, multer (+15 more)
 
 ### Community 50 - "ceoDashboardController.js"
 Cohesion: 0.09
@@ -410,7 +392,7 @@ Nodes (6): nodemailer, getTransporter(), logger, nodemailer, send(), TEMPLATES
 
 ### Community 55 - "Known Issues — IdeaHub"
 Cohesion: 0.08
-Nodes (25): Configuration, INF-001 — Intermittent Atlas connectivity, Infrastructure observations, KI-001 — CI pipeline exists but is non-functional / non-gating, KI-002 — Access token in localStorage (report.md §3), KI-003 — Client unit tests wired and passing, KI-006 — Port mismatch (Vite proxy vs server default), KI-007 — S3 storage mode has undeclared dependencies (+17 more)
+Nodes (24): Configuration, INF-001 — Intermittent Atlas connectivity, Infrastructure observations, KI-001 — CI pipeline exists but is non-functional / non-gating, KI-002 — Access token in localStorage (report.md §3), KI-003 — Client unit tests wired and passing, KI-006 — Port mismatch (Vite proxy vs server default), KI-007 — S3 storage mode has undeclared dependencies (+16 more)
 
 ### Community 56 - "scripts"
 Cohesion: 0.29
@@ -425,24 +407,31 @@ Cohesion: 0.10
 Nodes (19): 1. Token Storage Security (localStorage → in-memory + httpOnly cookie), 2. Account Lockout Protection, 3. Security Headers (CSP and beyond), 4. CLIENT_ORIGIN Fail-Closed Configuration, Changes Made, Client Auth Tests (`client/src/__tests__/auth.test.jsx`), Files Modified, Known Limitations & Future Work (+11 more)
 
 ### Community 59 - "Phase 4: Validation & Uploads — Implementation Summary"
-Cohesion: 0.14
-Nodes (13): Files Modified, For Deployment, For Route Developers, Known Limitations & Future Work, Manual Testing, Migration Checklist, Next Phase (Phase 5: Frontend Quality), Overview (+5 more)
+Cohesion: 0.11
+Nodes (18): 1. Reusable Input Validation Schemas (`server/utils/validators.js`), 2. Safe Filename Handling (`server/utils/safeFilename.js`), 3. S3 Configuration Validation (`server/server.js`), 4. Validation Tests (`server/__tests__/validation.test.js`), Changes Made, Files Modified, For Deployment, For Route Developers (+10 more)
 
-### Community 60 - "adminRoutes.js"
-Cohesion: 0.25
-Nodes (7): adminController, {
+### Community 60 - "validation.test.js"
+Cohesion: 0.18
+Nodes (15): AppError, { body, validationResult }, {
+  ideaCreateSchema,
+  ideaUpdateSchema,
+  implementationCreateSchema,
+  benefitCreateSchema,
   adminUpdateUserSchema,
   handleValidationErrors,
-  idParamSchema,
-}, { authorize }, express, { ROLES }, router, adminUpdateUserSchema
+}, {
+  sanitizeFilename,
+  validateExtensionMatchesMIME,
+  validateMagicBytes,
+}, AppError, MAGIC_BYTES, MIME_TO_EXT, path (+7 more)
 
 ### Community 61 - "CEO Dashboard — Implementation Report & UX Assessment"
 Cohesion: 0.12
 Nodes (15): 10. Testing, 11. Limitations, 12. Manual Browser Checklist (desktop browser was disconnected from the agent session), 1. Executive Summary, 2. Role Switcher, 3. Backend — Endpoints & Security, 4. KPI Formulas (documented in-code via `DEFINITIONS` and shown in UI tooltips), 6. Responsive Priority Order (mobile) (+7 more)
 
 ### Community 62 - "authorizationService.js"
-Cohesion: 0.17
-Nodes (18): Authorization re-verification (2026-09-27) — against report.md §3, Implementations — `/api/implementations` (protect at mount), Services (`server/services/`), Phase 2 — KI-005 FIXED (implementation owner eligibility), Phase 2 re-run (2026-09-27) — status re-verified, no new code changes, 6.1 Roles, 6.2 Role-Based Access Control Principles, 6. User Roles & Access Responsibilities (+10 more)
+Cohesion: 0.22
+Nodes (14): Authorization re-verification (2026-09-27) — against report.md §3, Implementations — `/api/implementations` (protect at mount), Services (`server/services/`), Phase 2 re-run (2026-09-27) — status re-verified, no new code changes, AppError, canAccessBenefit(), canAccessIdea(), canAccessImplementation() (+6 more)
 
 ### Community 63 - "devDependencies"
 Cohesion: 0.50
@@ -505,12 +494,12 @@ Cohesion: 0.29
 Nodes (6): Backend — IdeaHub (orientation only), Constants, Jobs (`server/jobs/`) — all started in-process from `server/server.js` L89–L99, Models (`server/models/`, 16), Route domains (mount → route file → controller), Shape
 
 ### Community 81 - "Decisions — IdeaHub"
-Cohesion: 0.33
-Nodes (5): DEC-001 — Financial Year starts April 1 (label `FY2026-27`), DEC-002 — Business-day SLA excludes weekends and holidays, DEC-003 — Committee voting → available follow-up actions, Decisions — IdeaHub, Deliberately not recorded here
+Cohesion: 0.29
+Nodes (6): DEC-001 — Financial Year starts April 1 (label `FY2026-27`), DEC-002 — Business-day SLA excludes weekends and holidays, DEC-003 — Committee voting → available follow-up actions, DEC-004 — Implementation owner eligibility (rule A), Decisions — IdeaHub, Deliberately not recorded here
 
 ### Community 82 - ".claude/memory — IdeaHub Project Memory"
-Cohesion: 0.25
-Nodes (7): .claude/memory — IdeaHub Project Memory, Division of labour inside this folder, How to update, Index, Product specs (two FRDs — do not conflate), Purpose, Rules
+Cohesion: 0.29
+Nodes (6): .claude/memory — IdeaHub Project Memory, Division of labour inside this folder, How to update, Index, Purpose, Rules
 
 ### Community 83 - "devDependencies"
 Cohesion: 0.29
@@ -524,21 +513,13 @@ Nodes (7): scripts, build, dev, preview, test, test:coverage, test:watch
 Cohesion: 0.33
 Nodes (5): ref_node_path, ref_node_url, @tailwindcss/vite, vite, @vitejs/plugin-react
 
-### Community 86 - "notificationService.js"
-Cohesion: 0.14
-Nodes (12): {
-  ALL_NOTIFICATION_CHANNELS,
-  ALL_NOTIFICATION_EVENTS: _events, // not needed on schema, used in service
-  NOTIFICATION_CHANNEL,
-}, mongoose, notificationSchema, emailService, logger, Notification, {
-  NOTIFICATION_EVENT,
-  NOTIFICATION_MATRIX,
-  NOTIFICATION_CHANNEL,
-}, resolvers (+4 more)
+### Community 86 - "storageService.js"
+Cohesion: 0.29
+Nodes (6): ref_fs, fs, localProvider, logger, path, s3Provider
 
-### Community 87 - "auditService.js"
-Cohesion: 0.12
-Nodes (13): { AUDIT_ACTION }, auditLogSchema, mongoose, AuditLog, log(), logger, adminUser, committeeUser (+5 more)
+### Community 87 - "AUDIT_ACTION"
+Cohesion: 0.33
+Nodes (6): Phase 2 — KI-005 FIXED (implementation owner eligibility), Authorization, KI-005 — Implementation owner eligibility was incomplete, approveImplementation(), getImplementationOwners(), AUDIT_ACTION
 
 ### Community 90 - "IdeaHub — Agent Instructions"
 Cohesion: 0.50
@@ -548,113 +529,25 @@ Nodes (3): Codebase Navigation, IdeaHub — Agent Instructions, Project Memory
 Cohesion: 0.50
 Nodes (3): IdeaHub Memory, Instructions, Notes
 
-### Community 95 - "IdeaHub Enterprise — Functional Requirement Document"
-Cohesion: 0.18
-Nodes (10): 17. Open Questions Requiring Stakeholder Decision, 18. Glossary of Terms, 4.1 Conceptual Lifecycle (v2.0), 4.2 Conceptual Architecture, 4. Platform Concept: The Shift from Idea Collection to Value Management, 5.1 Platform Description, 5.2 Core Functional Capabilities, 5. System Overview & Capability Map (+2 more)
-
-### Community 96 - "benefitRoutes.js"
-Cohesion: 0.20
-Nodes (9): uploadEvidence, { authorize }, benefitController, {
-  benefitCreateSchema,
-  handleValidationErrors,
-  idParamSchema,
-}, express, { ROLES }, router, { uploadEvidence } (+1 more)
-
-### Community 97 - "authRoutes.js"
-Cohesion: 0.25
-Nodes (8): express-validator, AppError, authController, { body, validationResult }, express, { protect }, router, validate()
-
-### Community 98 - "15. Non-Functional Requirements"
-Cohesion: 0.29
-Nodes (7): 15.1 Performance, 15.2 Availability & Resilience, 15.3 Security, 15.4 Scalability, 15.5 Usability & Accessibility, 15.6 Audit & Data Governance, 15. Non-Functional Requirements
-
-### Community 99 - "reportRoutes.js"
-Cohesion: 0.29
-Nodes (6): { authorize }, express, reportController, reportViewers, { ROLES }, router
-
-### Community 100 - "10. Detailed Functional Requirements — Business Impact & Value"
-Cohesion: 0.33
-Nodes (6): 10.1 Business Case, 10.2 Realised Impact Measurement, 10.3 Strategic Alignment, 10.4 Innovation Portfolio, 10.5 Idea → Delivery Integration, 10. Detailed Functional Requirements — Business Impact & Value
-
-### Community 101 - "14. Delivery Roadmap"
-Cohesion: 0.33
-Nodes (6): 14.1 Phase 1 — Enterprise-Ready Core, 14.2 Phase 2 — Intelligent Layer, 14.3 Phase 3 — Business Impact & Value, 14.4 Phase 4 — Enterprise Ecosystem, 14.5 Phase Dependencies & Sequencing Notes, 14. Delivery Roadmap
-
-### Community 102 - "galleryRoutes.js"
-Cohesion: 0.33
-Nodes (5): { authorize }, express, galleryController, { ROLES }, router
-
-### Community 103 - "11. Detailed Functional Requirements — Analytics & Executive Reporting"
-Cohesion: 0.40
-Nodes (5): 11.1 Executive Innovation Dashboard, 11.2 Innovation Heatmap, 11.3 Operational & Process Reporting, 11.4 Executive Reporting Consistency, 11. Detailed Functional Requirements — Analytics & Executive Reporting
-
-### Community 104 - "12. Detailed Functional Requirements — Governance, Security & Audit"
-Cohesion: 0.40
-Nodes (5): 12.1 Enterprise Authentication, 12.2 Authorization & Access Control, 12.3 Audit & Compliance, 12.4 Data Protection, 12. Detailed Functional Requirements — Governance, Security & Audit
-
-### Community 105 - "13. Detailed Functional Requirements — Platform & Ecosystem"
-Cohesion: 0.40
-Nodes (5): 13.1 API & Webhooks, 13.2 Integration Framework, 13.3 Mobile & Progressive Web App, 13.4 Multi-Department / Multi-Organisation Structure, 13. Detailed Functional Requirements — Platform & Ecosystem
-
-### Community 106 - "1. Executive Summary"
-Cohesion: 0.40
-Nodes (5): 1.1 Purpose, 1.2 The Core Positioning Change, 1.3 What This Document Covers, 1.4 Out of Scope for the Current Release, 1. Executive Summary
-
-### Community 107 - "2. Scope, Positioning & Relationship to v1.0"
-Cohesion: 0.40
-Nodes (5): 2.1 In Scope, 2.2 Out of Scope, 2.3 Target Outcomes, 2.4 Relationship to FRD v1.0, 2. Scope, Positioning & Relationship to v1.0
-
-### Community 108 - "9. Detailed Functional Requirements — AI & Intelligence Layer"
-Cohesion: 0.40
-Nodes (5): 9.1 AI Principles & Governance, 9.2 AI Categorisation & Theme Detection, 9.3 AI Trend & Sentiment Intelligence, 9.4 AI Executive Insights, 9. Detailed Functional Requirements — AI & Intelligence Layer
-
-### Community 109 - "Changes Made"
-Cohesion: 0.40
-Nodes (5): 1. Reusable Input Validation Schemas (`server/utils/validators.js`), 2. Safe Filename Handling (`server/utils/safeFilename.js`), 3. S3 Configuration Validation (`server/server.js`), 4. Validation Tests (`server/__tests__/validation.test.js`), Changes Made
-
-### Community 110 - "ideaStatusGroups.js"
-Cohesion: 0.40
-Nodes (4): { IDEA_STATUS, SLA_BUSINESS_DAYS, IDEA_STATUS_GROUPS }, PIPELINE_STAGES, REVIEW_STAGES, IDEA_STATUS_GROUPS
-
-### Community 111 - "16. Assumptions, Dependencies & Constraints"
-Cohesion: 0.50
-Nodes (4): 16.1 Assumptions, 16.2 Dependencies, 16.3 Constraints, 16. Assumptions, Dependencies & Constraints
-
-### Community 112 - "19. Requirement Traceability Matrix"
-Cohesion: 0.50
-Nodes (4): 19.1 Coverage by Phase, 19.2 Total Requirement Count, 19.3 Traceability to Capability Map, 19. Requirement Traceability Matrix
-
-### Community 113 - "3. Business Vision & Objectives"
-Cohesion: 0.50
-Nodes (4): 3.1 Vision Statement, 3.2 Strategic Objectives, 3.3 Strategic Alignment Objectives, 3. Business Vision & Objectives
-
-### Community 114 - "7. Idea Lifecycle 2.0"
-Cohesion: 0.50
-Nodes (4): 7.1 Lifecycle Stages, 7.2 Lifecycle Rules, 7.3 Idea Journey Status Trail, 7. Idea Lifecycle 2.0
-
-### Community 115 - "Document Control"
-Cohesion: 0.50
-Nodes (4): Approvals, Document Control, Document Information, Revision History
-
 ## Knowledge Gaps
-- **1013 isolated node(s):** `name`, `version`, `description`, `main`, `dev` (+1008 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1127 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **9 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **919 isolated node(s):** `name`, `version`, `description`, `main`, `dev` (+914 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1031 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `2026-09-27 — UI / Theme / Workflow audit (session continuation)` connect `2026-09-27 — UI / Theme / Workflow audit (session continuation)` to `supervisorController.js`, `App.jsx`, `CeoDashboardPage.jsx`, `User.js`, `authorizationService.js`?**
-  _High betweenness centrality (0.239) - this node is a cross-community bridge._
+- **Why does `2026-09-27 — UI / Theme / Workflow audit (session continuation)` connect `2026-09-27 — UI / Theme / Workflow audit (session continuation)` to `supervisorController.js`, `App.jsx`, `CeoDashboardPage.jsx`, `AUDIT_ACTION`, `eventController.js`, `authorizationService.js`?**
+  _High betweenness centrality (0.283) - this node is a cross-community bridge._
 - **Why does `AppLayout()` connect `App.jsx` to `GalleryPage.jsx`, `api/index.js`, `lucide-react`, `2026-09-27 — UI / Theme / Workflow audit (session continuation)`?**
-  _High betweenness centrality (0.195) - this node is a cross-community bridge._
-- **Why does `getEventById()` connect `User.js` to `2026-09-27 — UI / Theme / Workflow audit (session continuation)`?**
-  _High betweenness centrality (0.085) - this node is a cross-community bridge._
+  _High betweenness centrality (0.219) - this node is a cross-community bridge._
+- **Why does `approveIdea()` connect `supervisorController.js` to `2026-09-27 — UI / Theme / Workflow audit (session continuation)`?**
+  _High betweenness centrality (0.115) - this node is a cross-community bridge._
 - **Are the 3 inferred relationships involving `usePageTitle()` (e.g. with `2026-09-27 — UI/UX audit, independent re-audit + P0 regression fixes` and `2026-09-27 — UI/UX audit Phase 4 (micro-details)`) actually correct?**
   _`usePageTitle()` has 3 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `version`, `description` to the rest of the system?**
-  _1013 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _919 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `ideaController.js` be split into smaller, more focused modules?**
-  _Cohesion score 0.1225296442687747 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0512987012987013 - nodes in this community are weakly interconnected._
 - **Should `reportController.js` be split into smaller, more focused modules?**
   _Cohesion score 0.125 - nodes in this community are weakly interconnected._

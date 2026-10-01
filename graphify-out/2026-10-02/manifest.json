@@ -330,9 +330,9 @@
     "semantic_hash": ""
   },
   "server/controllers/committeeController.js": {
-    "mtime": 1790849255.2623308,
-    "seen": 1790879758.069895,
-    "ast_hash": "6bb324223c7a3fda7f6d1fe8e954f761",
+    "mtime": 1790485062.6184804,
+    "seen": 1790535609.755637,
+    "ast_hash": "c8b307d832742a52a4ae2108021cf4be",
     "semantic_hash": ""
   },
   "server/controllers/dashboardController.js": {
@@ -360,9 +360,9 @@
     "semantic_hash": "aca7feb13537536260227a988915d48e"
   },
   "server/controllers/ideaController.js": {
-    "mtime": 1790849255.262151,
-    "seen": 1790879758.069898,
-    "ast_hash": "f9729e36bf136fb0508ecdfaeb3a61a5",
+    "mtime": 1790409951.784164,
+    "seen": 1790535609.755639,
+    "ast_hash": "11b3cb12a0f36a210d56471594f7352f",
     "semantic_hash": ""
   },
   "server/controllers/implementationController.js": {
@@ -696,9 +696,9 @@
     "semantic_hash": "07ccb0380e56be2fb9d00c577dbe2ce4"
   },
   "server/services/workflowService.js": {
-    "mtime": 1790849255.2618804,
-    "seen": 1790879758.069942,
-    "ast_hash": "bf8b3e93d56589cc0e431d35000ea7d1",
+    "mtime": 1790484941.1221018,
+    "seen": 1790535609.755672,
+    "ast_hash": "7ee78777f22d5eeb46766e742fb70a24",
     "semantic_hash": ""
   },
   "server/utils/AppError.js": {
@@ -1050,9 +1050,9 @@
     "semantic_hash": ""
   },
   ".claude/memory/CHANGELOG.md": {
-    "mtime": 1790878262.9929216,
-    "seen": 1790879758.0699499,
-    "ast_hash": "5606c4945180d0f465846a9143ab130d",
+    "mtime": 1790532665.7125793,
+    "seen": 1790535609.75568,
+    "ast_hash": "79b555f3ce4ceb0ccc774fa41cfea281",
     "semantic_hash": ""
   },
   ".claude/memory/PHASE1-CHECKPOINT.md": {
@@ -1062,15 +1062,15 @@
     "semantic_hash": ""
   },
   ".claude/memory/README.md": {
-    "mtime": 1790878275.2511213,
-    "seen": 1790879758.069951,
-    "ast_hash": "d78df24a8b72a5a61e663f0a357338d5",
+    "mtime": 1790485181.4767458,
+    "seen": 1790535609.755681,
+    "ast_hash": "d4286e12f7b428c9b7bfc7c29f46f097",
     "semantic_hash": ""
   },
   ".claude/memory/api-contract.md": {
-    "mtime": 1790849329.8544657,
-    "seen": 1790879758.069951,
-    "ast_hash": "c1d323b4493fcab06e52e5a3fc39c080",
+    "mtime": 1790485130.0234618,
+    "seen": 1790535609.755681,
+    "ast_hash": "3d3e966134759673814da9e4a78e8cfb",
     "semantic_hash": ""
   },
   ".claude/memory/architecture.md": {
@@ -1104,9 +1104,9 @@
     "semantic_hash": ""
   },
   ".claude/memory/known-issues.md": {
-    "mtime": 1790849310.2773986,
-    "seen": 1790879758.069955,
-    "ast_hash": "17763243cc99e7468677ffe1b95e1920",
+    "mtime": 1790532762.603203,
+    "seen": 1790535609.7556832,
+    "ast_hash": "3ac25e82cd2352c90c4bd137552fd4fa",
     "semantic_hash": ""
   },
   ".claude/skills/ideahub-memory/SKILL.md": {
@@ -1167,30 +1167,6 @@
     "mtime": 1790527461.7787933,
     "seen": 1790535609.755693,
     "ast_hash": "684bc6e2392a63bf9ba98d9a35c5bf3d",
-    "semantic_hash": ""
-  },
-  "server/__tests__/committee.controller.test.js": {
-    "mtime": 1790849255.2627523,
-    "seen": 1790879758.06989,
-    "ast_hash": "eb63544afb9a9df6e9b20eacc4b41792",
-    "semantic_hash": ""
-  },
-  "server/__tests__/workflow.regression.test.js": {
-    "mtime": 1790849255.2625368,
-    "seen": 1790879758.0698922,
-    "ast_hash": "e03fa723bf50a170113ced212efe749e",
-    "semantic_hash": ""
-  },
-  "modifyfrd.md": {
-    "mtime": 1790878220.4333396,
-    "seen": 1790879758.069966,
-    "ast_hash": "0b805887de5996a8a9ca6e64a4a9896a",
-    "semantic_hash": ""
-  },
-  "docs/idea-lifecycle-flow.svg": {
-    "mtime": 1790849261.5124576,
-    "seen": 1790879758.069967,
-    "ast_hash": "3a71fe059aad12bfb2cc556e1a579bd9",
     "semantic_hash": ""
   }
 }
