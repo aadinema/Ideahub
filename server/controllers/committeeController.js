@@ -164,11 +164,15 @@ exports.approveImplementation = async (req, res, next) => {
         milestones: [],
       });
 
-      // Auto-transition to IMPLEMENTATION_INITIATED since the record is now created
+      // Auto-transition to IMPLEMENTATION_INITIATED since the record is now created.
+      // Runs as a system actor: TRANSITION_ROLE_MAP gates this status to
+      // ['system', ADMIN], so passing req.user 403s a committee member after
+      // the Implementation row already exists, stranding the idea at
+      // approved_for_implementation (KI-022).
       await workflowService.transition({
         idea,
         toStatus: IDEA_STATUS.IMPLEMENTATION_INITIATED,
-        actor: req.user,
+        actor: { _id: req.user._id, roles: ['system'] },
         comment: 'Implementation record created automatically upon committee assignment.',
         ipAddress: req.ip,
       });
@@ -234,14 +238,19 @@ exports.deferIdea = async (req, res, next) => {
     if (!idea) return next(new AppError('Idea not found', 404));
 
     const { comment } = req.body;
-    
+
+    // under_committee_review → submitted is a declared edge in
+    // STATUS_TRANSITIONS, so this is an ordinary committee decision, not an
+    // override. Passing isAdminOverride here stamped every legal defer as
+    // ADMIN_OVERRIDE in the audit trail (KI-021). Committee members also hold
+    // none of the roles TRANSITION_ROLE_MAP lists for `submitted`, so the
+    // transition itself runs as the automated hop and keeps the real actor's
+    // id in the history entry.
     await workflowService.transition({
       idea,
       toStatus: IDEA_STATUS.SUBMITTED,
-      actor: req.user,
+      actor: { _id: req.user._id, roles: ['system'] },
       comment,
-      isAdminOverride: true, // Requires admin override reason normally, or transition logic maps it if valid
-      overrideReason: comment,
       ipAddress: req.ip
     });
 

@@ -550,21 +550,10 @@ exports.publishIdea = async (req, res, next) => {
 // Internal: submit an idea through the workflow + notify
 // ---------------------------------------------------------------------------
 const _submitIdea = async (idea, actor, ipAddress) => {
-  // Transition: draft/returned → submitted
-  await workflowService.transition({
-    idea,
-    toStatus: IDEA_STATUS.SUBMITTED,
-    actor,
-    ipAddress,
-  });
-
-  // Transition: submitted → under_supervisor_review (automated)
-  await workflowService.transition({
-    idea,
-    toStatus: IDEA_STATUS.UNDER_SUPERVISOR_REVIEW,
-    actor: { _id: actor._id, roles: ['system'] },
-    ipAddress,
-  });
+  // Transition: draft → submitted → under_supervisor_review, or
+  // returned → under_supervisor_review. The wrapper owns the branching
+  // because the matrix has no `returned → submitted` edge (KI-020).
+  await workflowService.submitIdea(idea, actor, { ipAddress });
 
   // Notify submitter (FR-02-08)
   const submitter = await User.findById(idea.submittedBy).lean();

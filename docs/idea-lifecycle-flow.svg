@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1820" viewBox="0 0 1500 1820" font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif">
+<defs>
+<marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/></marker>
+</defs>
+<rect width="1500" height="1820" fill="#f8fafc"/>
+<text x="40" y="48" font-size="24" font-weight="700" fill="#1e1b4b">IdeaHub — Idea Lifecycle</text>
+<text x="40" y="74" font-size="13.5" fill="#64748b">Submission → Supervisor → Department evaluation → Committee → Publication / Implementation. Verified against shared/constants.js and server/services/workflowService.js.</text>
+<rect x="470" y="112" width="360" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="486" y="139" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">draft</text>
+<text x="486" y="160" font-size="11" fill="#64748b">Employee · POST /api/ideas</text>
+<rect x="470" y="216" width="360" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="486" y="243" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">submitted</text>
+<text x="486" y="264" font-size="11" fill="#64748b">Employee · POST /ideas/:id/submit</text>
+<rect x="470" y="320" width="360" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="486" y="347" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">under_supervisor_review</text>
+<text x="486" y="368" font-size="11" fill="#64748b">Supervisor queue · own-team ideas only</text>
+<rect x="470" y="424" width="360" height="66" rx="11" fill="#eef2ff" stroke="#818cf8" stroke-width="1.7" stroke-dasharray="5 3"/>
+<text x="486" y="451" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#312e81">supervisor_approved</text>
+<text x="486" y="472" font-size="11" fill="#64748b">Auto — lands and leaves in one request</text>
+<rect x="470" y="528" width="360" height="66" rx="11" fill="#eef2ff" stroke="#818cf8" stroke-width="1.7" stroke-dasharray="5 3"/>
+<text x="486" y="555" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#312e81">under_department_evaluation</text>
+<text x="486" y="576" font-size="11" fill="#64748b">Auto · assigns 2 same-dept evaluators</text>
+<rect x="470" y="632" width="360" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="486" y="659" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">shortlisted</text>
+<text x="486" y="680" font-size="11" fill="#64748b">Dept team · needs ≥2 evaluator scores</text>
+<rect x="470" y="736" width="360" height="66" rx="11" fill="#eef2ff" stroke="#818cf8" stroke-width="1.7" stroke-dasharray="5 3"/>
+<text x="486" y="763" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#312e81">under_committee_review</text>
+<text x="486" y="784" font-size="11" fill="#64748b">Auto — transient</text>
+<rect x="470" y="840" width="360" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="486" y="867" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">approved_for_publishing</text>
+<text x="486" y="888" font-size="11" fill="#64748b">Committee · approve-publishing</text>
+<rect x="470" y="944" width="360" height="66" rx="11" fill="#ecfdf5" stroke="#059669" stroke-width="1.7"/>
+<text x="486" y="971" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#064e3b">published</text>
+<text x="486" y="992" font-size="11" fill="#64748b">Admin, or cron job ≤5 min later</text>
+<rect x="40" y="320" width="340" height="66" rx="11" fill="#fffbeb" stroke="#d97706" stroke-width="1.7"/>
+<text x="56" y="347" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#78350f">returned</text>
+<text x="56" y="368" font-size="11" fill="#64748b">Supervisor · ≥20-char comment</text>
+<rect x="1000" y="320" width="460" height="66" rx="11" fill="#fef2f2" stroke="#dc2626" stroke-width="1.7"/>
+<text x="1016" y="347" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#7f1d1d">supervisor_rejected</text>
+<text x="1016" y="368" font-size="11" fill="#64748b">Supervisor · ≥20-char comment</text>
+<rect x="1000" y="528" width="460" height="66" rx="11" fill="#fef2f2" stroke="#dc2626" stroke-width="1.7"/>
+<text x="1016" y="555" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#7f1d1d">rejected_by_dept</text>
+<text x="1016" y="576" font-size="11" fill="#64748b">Dept innovation team</text>
+<rect x="1000" y="736" width="460" height="66" rx="11" fill="#fef2f2" stroke="#dc2626" stroke-width="1.7"/>
+<text x="1016" y="763" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#7f1d1d">committee_rejected</text>
+<text x="1016" y="784" font-size="11" fill="#64748b">Committee · ≥20-char rationale</text>
+<rect x="1000" y="840" width="460" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="1016" y="867" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">approved_for_implementation</text>
+<text x="1016" y="888" font-size="11" fill="#64748b">Committee · owner validated pre-transition</text>
+<rect x="1000" y="944" width="460" height="66" rx="11" fill="#eef2ff" stroke="#818cf8" stroke-width="1.7" stroke-dasharray="5 3"/>
+<text x="1016" y="971" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#312e81">implementation_initiated</text>
+<text x="1016" y="992" font-size="11" fill="#64748b">Auto (system) — if no record existed</text>
+<rect x="1000" y="1048" width="460" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="1016" y="1075" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">implementation_in_progress</text>
+<text x="1016" y="1096" font-size="11" fill="#64748b">Owner · PATCH, 0 &lt; progress &lt; 100</text>
+<rect x="1000" y="1152" width="460" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="1016" y="1179" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">implementation_completed</text>
+<text x="1016" y="1200" font-size="11" fill="#64748b">Owner · PATCH, progress = 100%</text>
+<rect x="1000" y="1256" width="460" height="66" rx="11" fill="#ffffff" stroke="#6366f1" stroke-width="1.7"/>
+<text x="1016" y="1283" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#1e293b">benefits_recorded</text>
+<text x="1016" y="1304" font-size="11" fill="#64748b">Owner / Finance · POST /benefits</text>
+<rect x="1000" y="1360" width="460" height="66" rx="11" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.7" stroke-dasharray="4 4"/>
+<text x="1016" y="1387" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#64748b">outcome_monitored</text>
+<text x="1016" y="1408" font-size="11" fill="#64748b">No endpoint reaches this status</text>
+<rect x="1000" y="1464" width="460" height="66" rx="11" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.7" stroke-dasharray="4 4"/>
+<text x="1016" y="1491" font-size="13.5" font-weight="600" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#64748b">closed</text>
+<text x="1016" y="1512" font-size="11" fill="#64748b">No endpoint reaches this status</text>
+<path d="M650,178 L650,216" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,282 L650,320" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,386 L650,424" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,490 L650,528" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,594 L650,632" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,698 L650,736" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,802 L650,840" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M650,906 L650,944" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M830,353 L1000,353" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M830,561 L1000,561" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M830,769 L1000,769" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M470,353 L380,353" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M830,769 L915,769 L915,873 L1000,873" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M1230,906 L1230,944" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M1230,1010 L1230,1048" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M1230,1114 L1230,1152" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M1230,1218 L1230,1256" stroke="#475569" stroke-width="2" fill="none" marker-end="url(#a)"/>
+<path d="M1230,1322 L1230,1360" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#r)" stroke-dasharray="6 4"/>
+<path d="M1230,1426 L1230,1464" stroke="#dc2626" stroke-width="2" fill="none" marker-end="url(#r)" stroke-dasharray="6 4"/>
+<rect x="853" y="330" width="123" height="18" rx="5" fill="#f8fafc"/>
+<text x="915" y="344" font-size="11" fill="#475569" text-anchor="middle">Reject · ≥20 chars</text>
+<rect x="889" y="538" width="52" height="18" rx="5" fill="#f8fafc"/>
+<text x="915" y="552" font-size="11" fill="#475569" text-anchor="middle">Reject</text>
+<rect x="853" y="746" width="123" height="18" rx="5" fill="#f8fafc"/>
+<text x="915" y="760" font-size="11" fill="#475569" text-anchor="middle">Reject · ≥20 chars</text>
+<text x="915" y="893" font-size="11" fill="#475569" text-anchor="middle">approve-implementation</text>
+<rect x="40" y="1570" width="1420" height="210" rx="13" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+<text x="66" y="1602" font-size="15" font-weight="700" fill="#1e1b4b">Defects found while tracing this flow — all three now fixed and regression-tested</text>
+<text x="70" y="1629" font-size="13" font-weight="700" fill="#059669">✗</text>
+<text x="92" y="1628" font-size="12.5" font-weight="600" fill="#1e293b">Resubmitting a returned idea always 422s.</text>
+<text x="92" y="1645" font-size="11.5" fill="#64748b">ideaController.js accepted RETURNED, but _submitIdea asked for SUBMITTED first and STATUS_TRANSITIONS[RETURNED] holds only UNDER_SUPERVISOR_REVIEW. FIXED (KI-020): submitIdea() now branches, sending a returned idea straight back to review.</text>
+<text x="70" y="1676" font-size="13" font-weight="700" fill="#059669">✗</text>
+<text x="92" y="1675" font-size="12.5" font-weight="600" fill="#1e293b">Every committee defer was logged as ADMIN_OVERRIDE.</text>
+<text x="92" y="1692" font-size="11.5" fill="#64748b">deferIdea passed isAdminOverride: true on a declared edge, so an ordinary committee decision was stamped as an override in the admin audit viewer. FIXED (KI-021): the flag is gone; the hop runs as the automated transition but keeps the committee member's id.</text>
+<text x="70" y="1723" font-size="13" font-weight="700" fill="#059669">✗</text>
+<text x="92" y="1722" font-size="12.5" font-weight="600" fill="#1e293b">approve-implementation stranded the idea after creating the Implementation record.</text>
+<text x="92" y="1739" font-size="11.5" fill="#64748b">The auto-transition to IMPLEMENTATION_INITIATED used actor: req.user, but the status is gated to ['system', ADMIN] — a 403 fired after the row was written. FIXED (KI-022): the hop now uses a system actor carrying the committee member's id.</text>
+<text x="1100" y="1556" font-size="12.5" font-weight="700" fill="#334155">Legend</text>
+<rect x="1100" y="1526" width="26" height="14" rx="4" fill="#ffffff" stroke="#6366f1" stroke-width="1.5"/>
+<text x="1133" y="1537" font-size="11" fill="#64748b">Human-gated stage</text>
+<rect x="1300" y="1526" width="26" height="14" rx="4" fill="#eef2ff" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="1333" y="1537" font-size="11" fill="#64748b">Automatic hop (never user-facing)</text>
+<rect x="1100" y="1548" width="26" height="14" rx="4" fill="#ecfdf5" stroke="#059669" stroke-width="1.5"/>
+<text x="1133" y="1559" font-size="11" fill="#64748b">Published / live</text>
+<rect x="1300" y="1548" width="26" height="14" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+<text x="1333" y="1559" font-size="11" fill="#64748b">Terminal — no outgoing edge</text>
+<rect x="1100" y="1570" width="26" height="14" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="1.5"/>
+<text x="1133" y="1581" font-size="11" fill="#64748b">Loops back to the employee</text>
+<rect x="1300" y="1570" width="26" height="14" rx="4" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"/>
+<text x="1333" y="1581" font-size="11" fill="#64748b">Unreachable: no endpoint</text>
+</svg>

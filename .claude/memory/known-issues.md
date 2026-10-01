@@ -1,6 +1,6 @@
 # Known Issues — IdeaHub
 
-Last verified: 2026-09-27
+Last verified: 2026-10-01
 Legend: OPEN · IN PROGRESS · FIXED
 Primary findings source: `IDEAHUB_IMPROVEMENT_REPORT.md` (2026-09-25).
 Secondary/older: `audit.md` (2026-09-05, stale in places), `ASSUMPTIONS.md`.
@@ -333,3 +333,63 @@ The original finding bullets below are kept only as a record.
 
 **A11y scoring:** still unmet — KI-014. No axe/Lighthouse could be run (registry
 blocked); findings above are from source inspection, not rendered-DOM tooling.
+
+## Idea lifecycle workflow defects (found 2026-10-01 by tracing the flow)
+
+All three were found by reading `STATUS_TRANSITIONS` + `TRANSITION_ROLE_MAP`
+against every call site of `workflowService.transition()`, and all three are
+now fixed with regression tests. Diagram: `docs/idea-lifecycle-flow.svg`.
+
+### KI-020 — A returned idea can never be resubmitted — FIXED (2026-10-01)
+**Status:** FIXED (2026-10-01)
+`ideaController._submitIdea` asked for `SUBMITTED` first, but
+`STATUS_TRANSITIONS[RETURNED]` holds only `UNDER_SUPERVISOR_REVIEW`
+(`shared/constants.js`) — there is no `returned → submitted` edge, so every
+resubmission died with a 422. `ideaController.js:418` was even written to
+*accept* a returned idea, so the guard and the matrix contradicted each other.
+**Fix:** `workflowService.submitIdea()` now branches on `idea.status`; a
+returned idea re-enters review in one hop. `_submitIdea` delegates to that
+wrapper instead of hand-rolling both hops. The second hop is inlined rather
+than routed through `routeToSupervisor`, which attributes to `idea.supervisorId`
+and drops the request IP — the submission must be attributed to the submitter.
+
+### KI-021 — Every committee defer was logged as ADMIN_OVERRIDE — FIXED (2026-10-01)
+**Status:** FIXED (2026-10-01)
+`committeeController.deferIdea` passed `isAdminOverride: true` for
+`under_committee_review → submitted`, which **is** a declared edge. The flag
+therefore bypassed nothing and only mislabelled the entry: every ordinary
+committee decision was stamped `ADMIN_OVERRIDE` in the admin audit viewer.
+Committee members also hold none of the roles `TRANSITION_ROLE_MAP` lists for
+`submitted`, so the fix passes a system actor carrying the committee member's
+real id — the role check at `workflowService.js:174` also short-circuits on
+`isAdminOverride`, which is what let the old code through at all.
+Note this was **not** a 403 (an earlier reading of the code was wrong).
+
+### KI-022 — approve-implementation stranded the idea after writing the row — FIXED (2026-10-01)
+**Status:** FIXED (2026-10-01)
+`approveImplementation` creates the `Implementation` document and then
+auto-transitions to `IMPLEMENTATION_INITIATED` with `actor: req.user`. That
+status is gated to `['system', ADMIN]`, so a committee member got a 403 *after*
+the row was already written, leaving the idea parked at
+`approved_for_implementation` with an orphaned implementation. Fixed with the
+same system-actor pattern used by `routeToSupervisor`.
+
+### KI-023 — `outcome_monitored` and `closed` are unreachable — OPEN
+**Status:** OPEN (product gap, not a code defect)
+Nothing transitions *into* either status, although `STATUS_TRANSITIONS` declares
+`benefits_recorded → outcome_monitored → closed` and
+`published → outcome_monitored | closed`. The lifecycle therefore terminates in
+practice at `benefits_recorded`, while FRD §5.2 specifies it ending at `Closed`.
+Either add the Stage-8 endpoint or delete the dead edges — but do not leave the
+matrix implying a path that does not exist.
+
+## Where the lifecycle rules actually live
+
+- Matrix: `shared/constants.js` → `STATUS_TRANSITIONS` (20 states, 4 terminal).
+- Role gate, keyed by **target** status: `TRANSITION_ROLE_MAP` in
+  `server/services/workflowService.js`. `system` bypasses it.
+- Order of enforcement in `transition()`: matrix → admin override → role →
+  per-target validators → side effects → audit log.
+- Audit fires on **every** transition; notifications do **not** — each
+  controller triggers its own. Defer, unpublish, and benefit
+  create/endorse send no notification.

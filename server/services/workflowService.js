@@ -229,9 +229,35 @@ const transition = async ({
 // Convenience wrappers for common transitions
 // ---------------------------------------------------------------------------
 
-/** Submit a draft idea → triggers supervisor assignment */
-const submitIdea = (idea, actor, options) =>
-  transition({ idea, toStatus: IDEA_STATUS.SUBMITTED, actor, ...options });
+/**
+ * Submit an idea for supervisor review.
+ *
+ * A fresh draft goes draft → submitted → under_supervisor_review.
+ * A returned idea is already past the employee stage, and the matrix has
+ * no `returned → submitted` edge (see STATUS_TRANSITIONS), so it re-enters
+ * review directly. Routing it through SUBMITTED would 422 (KI-020).
+ *
+ * Both hops are inlined rather than delegating to routeToSupervisor, which
+ * attributes the hop to idea.supervisorId and takes no options — the
+ * submission request must be attributed to the submitting actor and carry
+ * the request IP into the audit trail.
+ */
+const submitIdea = async (idea, actor, options = {}) => {
+  const routeToReview = () =>
+    transition({
+      idea,
+      toStatus: IDEA_STATUS.UNDER_SUPERVISOR_REVIEW,
+      actor: { _id: actor._id, roles: ['system'] },
+      ...options,
+    });
+
+  if (idea.status === IDEA_STATUS.RETURNED) {
+    return routeToReview();
+  }
+
+  await transition({ idea, toStatus: IDEA_STATUS.SUBMITTED, actor, ...options });
+  return routeToReview();
+};
 
 /** Auto-route submitted idea → under_supervisor_review (system call) */
 const routeToSupervisor = (idea) =>

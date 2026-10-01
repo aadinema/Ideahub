@@ -100,6 +100,26 @@ COMM innovation_committee · OWN implementation_owner · ADMIN · CEO.
 > owner and runs the **same** `validateImplementationOwner` rule before transitioning
 > (see A3).
 
+## Idea status transitions (verified 2026-10-01)
+
+Every status change goes through `workflowService.transition()` — the single
+authority. It enforces, in order: the `STATUS_TRANSITIONS` matrix
+(`shared/constants.js`) → admin override (any edge, but `overrideReason` ≥20
+chars) → role check via `TRANSITION_ROLE_MAP` (keyed by **target** status;
+`system` bypasses it) → per-target business validators → side effects → audit.
+It writes an `AuditLog` row on **every** transition; it does **not** send
+notifications — each controller triggers its own.
+
+So a 422 means "edge not in the matrix", a 403 means "your roles do not include
+a role listed for the target status" (unless `isAdminOverride` short-circuits
+it — see the role check). Automatic hops pass `actor: { _id, roles: ['system'] }`.
+
+Notable: supervisor `approve` and dept `shortlist` each perform **two**
+transitions in one request (the second as `system`). A returned idea re-enters
+review directly — there is no `returned → submitted` edge (KI-020).
+Full trace + diagram: `docs/idea-lifecycle-flow.svg`; defects KI-020…KI-023
+in `known-issues.md`.
+
 ## Benefits — `/api/benefits` (protect at mount)
 | Method | Path | Role | Notes |
 |---|---|---|---|
