@@ -43,6 +43,16 @@ Primary findings source to cross-reference: `IDEAHUB_IMPROVEMENT_REPORT.md`
 (2026-09-25). Secondary/older: `audit.md` (2026-09-05, stale in places),
 `ASSUMPTIONS.md`.
 
+## Product specs (two FRDs — do not conflate)
+| Spec | Status | Relationship |
+|---|---|---|
+| `IdeaHub_Ideathon_FRD.md` (v1.0, baselined) | Governs implemented behaviour | — |
+| `modifyfrd.md` (v2.0, draft, created 2026-10-01) | Proposal for the enterprise expansion | **Does not supersede v1.0.** Where they conflict on an implemented feature, **v1.0 wins** until a change request is approved. Uses `FR2-*`/`NFR2-*` IDs, deliberately distinct from v1.0's `FR-*` series so the two stay traceable. |
+
+`modifyfrd.md` is **specification only — nothing in it is implemented.** Do not treat its
+203 `FR2-*` requirements as existing features. Its §17 open questions (OQ-01…OQ-10) are
+unresolved product decisions, not settled requirements.
+
 **Authority:** `known-issues.md` is the **authoritative "what is actually open"**
 list. `IDEAHUB_IMPROVEMENT_REPORT.md` is a historical input — several of its findings
 have been verified stale, corrected, or already-resolved (see `known-issues.md` and

@@ -3,6 +3,38 @@
 This file logs both code changes and memory-file changes, newest first.
 Never overwrite history; append entries.
 
+## 2026-10-01 — New artifact `modifyfrd.md` (IdeaHub Enterprise FRD v2.0)
+
+Documentation only. **No code, schema, config or test changes.** No existing file modified
+except this CHANGELOG and `README.md`.
+- Created **`modifyfrd.md`** (repo root, ~1,200 lines) — a standalone FRD spec for evolving
+  IdeaHub from an idea-management system into an enterprise innovation-management platform
+  (capture → AI discovery → evaluation → business case → decision → pilot → implementation →
+  impact → ROI → portfolio), covering the 25 capability areas proposed by the user.
+- **Explicitly does NOT supersede `IdeaHub_Ideathon_FRD.md` v1.0.** Stated in the document
+  header, §2.4 and the closing note; v1.0 governs where the two conflict until a change
+  request is approved. New requirement IDs use the **`FR2-*`** prefix (plus `NFR2-*`) so
+  nothing collides with v1.0's `FR-*` series.
+- Structure: 19 sections — scope/positioning, business objectives, capability map, roles,
+  Lifecycle 2.0 (11 stages; AI Pre-Screen, Business Case, Pilot and Impact Measurement added
+  *alongside* every v1.0 stage, none removed), 203 functional requirements across 35 prefixes,
+  33 NFRs, and a 4-phase roadmap.
+- Counts are **machine-verified**: 203 unique `FR2-*` rows, no duplicate IDs, every prefix
+  contiguous from `-01`, and every prefix assigned to exactly one phase. An earlier hand-written
+  total of 179 was wrong and was corrected to 203.
+- Roadmap per user decision: **AI stays out of Phase 1** (preserves the v1.0 §1.2 scope
+  stance). Phase 1 = enterprise-ready core (101 reqs); Phase 2 = AI/intelligence (36);
+  Phase 3 = business impact & value (28); Phase 4 = enterprise ecosystem (38).
+- Carried two current-implementation facts into the spec as forward-looking NFRs, since v2.0
+  must not regress them: **NFR2-SC-03/04** (statelessness — current IdeaHub runs scheduled
+  jobs in-process with process-local dedup state, which blocks true multi-instance scaling) and
+  **FR2-RPT-07** (one shared metric definition across views, to prevent dashboard/report
+  divergence).
+- §17 records **10 open questions (OQ-01…OQ-10)** needing stakeholder decision rather than
+  silently assuming them — notably whether a business case *blocks* approval (OQ-01), what
+  counts as "realised" value (OQ-02, needs Finance), and whether Pilot is mandatory or opt-in
+  (OQ-03).
+
 ## 2026-09-27 — UI/UX audit, KI-014 FIXED: real axe-core accessibility gate
 
 First automated a11y gate in the project. UI-only; dev-tooling only (no runtime dep).
@@ -762,3 +794,56 @@ attributes, `npm run build` ✓, `npm test` 13/13 ✓.
   needs is blocked too. Both suites run in CI (`.github/workflows/ci.yml` gates
   build → client tests → server tests → seed → `test:smoke` → gitleaks, plus CodeQL), so
   that is where their real result lands.
+
+---
+
+## 2026-10-01 — Idea lifecycle: flow diagram + three workflow defects fixed
+
+Started from "draw me a diagram of idea submission → evaluation flow", which
+turned into reading the whole lifecycle end to end. The diagram is at
+`docs/idea-lifecycle-flow.svg` (hand-authored SVG — the npm registry is blocked
+in this sandbox, so `mermaid`/`mmdc` could not be installed, and no
+svg→png converter exists here either).
+
+**Three real defects found, all fixed, all regression-tested.**
+
+1. **KI-020 — returned ideas could never be resubmitted.** `_submitIdea` asked
+   for `SUBMITTED` before `UNDER_SUPERVISOR_REVIEW`, but the matrix has no
+   `returned → submitted` edge, so every resubmit 422'd. `submitIdea()` now
+   branches on the current status.
+2. **KI-021 — every committee defer was logged as `ADMIN_OVERRIDE`.** Defer
+   passed `isAdminOverride: true` for what is a declared edge, so the flag
+   bought nothing and only corrupted the audit trail.
+3. **KI-022 — `approve-implementation` stranded ideas.** The auto-transition to
+   `IMPLEMENTATION_INITIATED` used `actor: req.user`; that status is gated to
+   `['system', ADMIN]`, so a committee member got a 403 *after* the
+   `Implementation` row was written.
+
+**A correction worth recording.** I first reported #2 as "defer 403s for
+committee members". That was wrong, and the tests caught it: the role check at
+`workflowService.js:174` short-circuits on `isAdminOverride`, so no 403 ever
+occurred. The defect is real but is an audit-trail mislabelling, not a failure.
+Two other claims did not survive testing either — bugs 2 and 3 live in the
+controllers, so service-level tests could not detect their regression at all.
+**Lesson: for any claim about this workflow, write the failing test first.**
+
+**New tests (both run without MongoDB — models/services are mocked):**
+- `server/__tests__/workflow.regression.test.js` — 13 tests over the state
+  machine, including the unchanged guards (≥2 evaluator scores, ≥20-char
+  comments, admin-override reason, terminal states).
+- `server/__tests__/committee.controller.test.js` — 5 tests over the two
+  controller defects, which the service-level suite structurally cannot catch.
+
+Both were verified to **fail on the original code** and pass after the fix.
+One extra test pins that both submit hops attribute to the submitting actor and
+carry the request IP — my first fix delegated to `routeToSupervisor`, which
+would have silently changed both.
+
+**Verified:** `workflow.regression` 13/13, `committee.controller` 5/5,
+`validation` 37/37 → **55/55 across 3 suites**. `node --check` clean on all
+changed files.
+
+**Not verified here:** `authorization.test.js`, `event.test.js`,
+`auth.integration.test.js` need MongoDB, which the sandbox blocks (EPERM on
+27017) — they run in CI. Also note `npx jest` needs `--watchman=false` here;
+`fb-watchman` crashes under the sandbox.
