@@ -95,8 +95,8 @@ function AppLayout() {
   const SidebarContent = (
     <>
       {/* Logo */}
-      <div className="h-[64px] flex items-center gap-3 px-5 border-b border-theme-border/50">
-        <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0">
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-theme-border/50">
+        <div className="w-8 h-8 rounded-lg gradient-brand flex items-center justify-center shrink-0">
           <Zap className="w-4 h-4 text-white" aria-hidden="true" />
         </div>
         <div>
@@ -114,7 +114,7 @@ function AppLayout() {
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}
           >
-            <Icon className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+            <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
             <span>{label}</span>
           </NavLink>
         ))}
@@ -123,7 +123,7 @@ function AppLayout() {
       {/* User panel */}
       <div className="p-3 border-t border-theme-border/50">
         <div className="flex items-center gap-3 p-2 rounded-lg">
-          <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center flex-shrink-0 text-white text-xs font-bold relative">
+          <div className="w-8 h-8 rounded-full gradient-brand flex items-center justify-center shrink-0 text-white text-xs font-bold relative">
             {initials}
             {/* Active role indicator dot */}
             <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white"
@@ -144,7 +144,7 @@ function AppLayout() {
         <button
           onClick={handleLogout}
           id="btn-logout"
-          className="sidebar-item w-full mt-1 text-theme-text0 hover:!text-error-text"
+          className="sidebar-item w-full mt-1 text-theme-text0 hover:text-error-text!"
         >
           <LogOut className="w-4 h-4" aria-hidden="true" />
           <span>Sign out</span>
@@ -156,7 +156,7 @@ function AppLayout() {
   return (
     <div className="flex h-screen overflow-hidden bg-theme-bg">
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-[240px] flex-shrink-0 flex-col h-full border-r border-theme-border/50" style={{ background: 'var(--sidebar-bg)' }}>
+      <aside className="hidden md:flex w-60 shrink-0 flex-col h-full border-r border-theme-border/50" style={{ background: 'var(--sidebar-bg)' }}>
         {SidebarContent}
       </aside>
 
@@ -168,7 +168,7 @@ function AppLayout() {
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
-          <aside className="relative w-[260px] max-w-[80vw] flex flex-col h-full border-r border-theme-border/50 page-enter" style={{ background: 'var(--sidebar-bg)' }}>
+          <aside className="relative w-65 max-w-[80vw] flex flex-col h-full border-r border-theme-border/50 page-enter" style={{ background: 'var(--sidebar-bg)' }}>
             <button
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
@@ -189,7 +189,7 @@ function AppLayout() {
         </a>
 
         {/* Top bar */}
-        <header className="h-[64px] flex items-center justify-between px-4 md:px-6 border-b border-theme-border/50 flex-shrink-0" style={{ background: 'var(--surface)' }}>
+        <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-theme-border/50 shrink-0" style={{ background: 'var(--surface)' }}>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileOpen(true)}
@@ -280,7 +280,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
           {/* Current User Info */}
           <div className="px-4 py-3 border-b border-theme-border/50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center flex-shrink-0 text-white text-sm font-bold">
+              <div className="w-10 h-10 rounded-full gradient-brand flex items-center justify-center shrink-0 text-white text-sm font-bold">
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
@@ -324,7 +324,7 @@ function ProfileSwitcher({ currentProfile, user, profiles, onSwitchRole }) {
                       >
                         {/* Role icon with color */}
                         <div 
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                             isActive ? 'text-white' : 'text-theme-text/60'
                           }`}
                           style={{ backgroundColor: isActive ? profile.color : `color-mix(in srgb, ${profile.color} 14%, transparent)` }}

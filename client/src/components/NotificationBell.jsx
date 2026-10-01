@@ -48,7 +48,7 @@ export default function NotificationBell() {
       >
         <Bell className="w-4 h-4 text-theme-text/80" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-error text-white text-[11px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1 rounded-full bg-error text-white text-[11px] font-bold flex items-center justify-center">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -131,7 +131,7 @@ function NotificationDropdownContent({ unreadCount, markAllRead }) {
                     n.isRead ? '' : 'bg-theme-accent/5'
                   }`}
                 >
-                  <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${n.isRead ? 'bg-transparent' : 'bg-theme-accent'}`} />
+                  <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.isRead ? 'bg-transparent' : 'bg-theme-accent'}`} />
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium text-theme-text truncate">{n.title}</span>
                     <span className="block text-xs text-theme-text0 line-clamp-2 mt-0.5">{n.body}</span>

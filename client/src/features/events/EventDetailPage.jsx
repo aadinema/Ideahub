@@ -67,7 +67,7 @@ export default function EventDetailPage() {
   const isFull = event?.maxParticipants && participants.length >= event.maxParticipants;
 
   return (
-    <div className="page-enter max-w-[1000px] mx-auto pb-12">
+    <div className="page-enter max-w-250 mx-auto pb-12">
       <button
         onClick={() => navigate(-1)}
         className="text-sm text-theme-text/80 hover:text-theme-accent flex items-center gap-1 mb-6 transition-colors"
@@ -145,7 +145,7 @@ export default function EventDetailPage() {
               <button
                 onClick={() => joinMutation.mutate()}
                 disabled={isJoined || joinMutation.isPending || isFull}
-                className={`btn ${isJoined ? 'btn-secondary !text-success-text cursor-not-allowed' : 'btn-primary'}`}
+                className={`btn ${isJoined ? 'btn-secondary text-success-text! cursor-not-allowed' : 'btn-primary'}`}
               >
                 {isJoined ? (
                   <><CheckCircle2 className="w-4 h-4" /> You've Joined</>
@@ -195,7 +195,7 @@ export default function EventDetailPage() {
                 className="flex items-center gap-4 p-4 rounded-xl bg-theme-surface/40 border border-theme-border/50 hover:bg-theme-surface/80 transition-colors"
               >
                 {/* Rank badge */}
-                <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-lg bg-theme-surface border border-theme-border relative">
+                <div className="w-12 h-12 shrink-0 flex items-center justify-center rounded-lg bg-theme-surface border border-theme-border relative">
                   {index === 0 && <Medal className="w-5 h-5 text-theme-accent absolute -top-2 -right-2 drop-shadow-md" />}
                   {index === 1 && <Medal className="w-5 h-5 text-theme-text/80 absolute -top-2 -right-2 drop-shadow-md" />}
                   {index === 2 && <Medal className="w-5 h-5 text-warning absolute -top-2 -right-2 drop-shadow-md" />}
@@ -215,7 +215,7 @@ export default function EventDetailPage() {
                   </p>
                 </div>
 
-                <div className="text-right flex-shrink-0 flex items-center gap-4">
+                <div className="text-right shrink-0 flex items-center gap-4">
                   <div className="hidden sm:block">
                     <IdeaStatusBadge status={idea.status} />
                   </div>

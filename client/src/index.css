@@ -99,20 +99,20 @@
   /* Table */
   --table-row-hover: rgba(248, 250, 252, 0.8);
 
-  /* Typography — platform UI stack. No external font: the server CSP allows
-     font-src 'self' only, so a Google Fonts link is silently blocked in prod. */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  /* Typography — platform UI stack with Inter / Geist preference */
+  --font-sans: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Inter', 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 
   /* Radius scale */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  /* Elevation scale */
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --shadow-pop: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+  /* Elevation scale — soft multi-layer shadows */
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 14px -2px rgba(15, 23, 42, 0.03);
+  --shadow-pop: 0 10px 25px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
   --shadow-modal: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
+  --shadow-glow: 0 0 24px -2px rgba(79, 70, 229, 0.22);
 
   /* Animations */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -371,16 +371,49 @@ body {
    light fills and fail AA at badge sizes). Theme-aware: the `-text` vars swap
    automatically, so no per-theme overrides are needed. */
 .badge-draft           { background: var(--rose-light);    color: var(--text-secondary); border-color: rgba(239, 68, 68, 0.2); }
-.badge-submitted       { background: var(--info-light);    color: var(--info-text);      border-color: rgba(59, 130, 246, 0.2); }
-.badge-supervisor      { background: var(--warning-light); color: var(--warning-text);   border-color: rgba(245, 158, 11, 0.2); }
-.badge-evaluation      { background: var(--purple-light);  color: var(--purple-text);    border-color: rgba(139, 92, 246, 0.2); }
-.badge-shortlisted     { background: var(--success-light); color: var(--success-text);   border-color: rgba(16, 185, 129, 0.2); }
-.badge-committee       { background: var(--pink-light);    color: var(--pink-text);      border-color: rgba(236, 72, 153, 0.2); }
+.badge-submitted       { background: var(--info-light);    color: var(--info-text);      border-color: rgba(59, 130, 246, 0.25); }
+.badge-supervisor      { background: var(--warning-light); color: var(--warning-text);   border-color: rgba(245, 158, 11, 0.25); }
+.badge-evaluation      { background: var(--warning-light); color: var(--warning-text);   border-color: rgba(245, 158, 11, 0.25); }
+.badge-shortlisted     { background: var(--success-light); color: var(--success-text);   border-color: rgba(16, 185, 129, 0.25); }
+.badge-committee       { background: var(--warning-light); color: var(--warning-text);   border-color: rgba(245, 158, 11, 0.25); }
 .badge-approved        { background: var(--success-light); color: var(--success-text);   border-color: rgba(16, 185, 129, 0.25); }
-.badge-published       { background: var(--primary-light); color: var(--primary);        border-color: var(--primary-ring); }
-.badge-implementation  { background: var(--orange-light);  color: var(--orange-text);    border-color: rgba(249, 115, 22, 0.2); }
-.badge-rejected        { background: var(--error-light);   color: var(--error-text);     border-color: rgba(239, 68, 68, 0.2); }
+.badge-published       { background: var(--purple-light);  color: var(--purple-text);    border-color: rgba(139, 92, 246, 0.25); }
+.badge-implementation  { background: var(--purple-light);  color: var(--purple-text);    border-color: rgba(139, 92, 246, 0.25); }
+.badge-rejected        { background: var(--error-light);   color: var(--error-text);     border-color: rgba(239, 68, 68, 0.25); }
 .badge-closed          { background: var(--rose-light);    color: var(--text-secondary); border-color: rgba(148, 163, 184, 0.2); }
+
+/* ── Modern SaaS Carousel & Card Utilities ── */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.card-premium {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.card-premium:hover {
+  box-shadow: var(--shadow-pop);
+  border-color: var(--primary-ring);
+  transform: translateY(-2px);
+}
+
+[data-theme="dark"] .card-premium {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] .card-premium:hover {
+  border-color: rgba(129, 140, 248, 0.35);
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.5), 0 0 20px -2px rgba(99, 102, 241, 0.15);
+}
 
 /* ── SLA countdown colors (FR-03-04) ── */
 .sla-ok    { color: var(--success-text); }

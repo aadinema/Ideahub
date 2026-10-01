@@ -62,7 +62,7 @@ export default function EvaluationQueuePage() {
   };
 
   return (
-    <div className="page-enter max-w-[1200px] mx-auto">
+    <div className="page-enter max-w-300 mx-auto">
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-display text-3xl text-theme-text mb-1">Department Evaluation Queue</h1>
@@ -90,7 +90,7 @@ export default function EvaluationQueuePage() {
           {queue.map((idea) => (
             <div key={idea._id} className="glass rounded-xl p-5 flex flex-col md:flex-row gap-5 items-start justify-between group transition-colors">
               <div className="flex items-start gap-4 flex-1">
-                <div className="w-10 h-10 rounded-lg gradient-brand flex items-center justify-center flex-shrink-0 mt-1">
+                <div className="w-10 h-10 rounded-lg gradient-brand flex items-center justify-center shrink-0 mt-1">
                   <Lightbulb className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
                 <div>
@@ -124,10 +124,10 @@ export default function EvaluationQueuePage() {
                 <button onClick={() => navigate(`/evaluations/${idea._id}/score`)} className="btn btn-primary flex-1 md:flex-none">
                   <Play className="w-4 h-4" aria-hidden="true" /> Score Idea
                 </button>
-                <button onClick={() => handleAction(idea, 'shortlist')} className="btn btn-secondary !bg-success-light !text-success-text hover:!bg-success/20 !border-success/20 flex-1 md:flex-none">
+                <button onClick={() => handleAction(idea, 'shortlist')} className="btn btn-secondary bg-success-light! text-success-text! hover:bg-success/20! border-success/20! flex-1 md:flex-none">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" /> Shortlist
                 </button>
-                <button onClick={() => handleAction(idea, 'reject')} className="btn btn-secondary !bg-error-light !text-error-text hover:!bg-error/20 !border-error/20 flex-1 md:flex-none">
+                <button onClick={() => handleAction(idea, 'reject')} className="btn btn-secondary bg-error-light! text-error-text! hover:bg-error/20! border-error/20! flex-1 md:flex-none">
                   <XCircle className="w-4 h-4" aria-hidden="true" /> Reject
                 </button>
               </div>

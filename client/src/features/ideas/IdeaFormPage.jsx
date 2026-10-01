@@ -379,7 +379,7 @@ export default function IdeaFormPage() {
   }
 
   return (
-    <div className="page-enter max-w-[860px] mx-auto">
+    <div className="page-enter max-w-215 mx-auto">
       {/* ── Header ── */}
       <div className="flex items-center gap-2 text-sm text-theme-text0 mb-6">
         <span>Ideas</span>
@@ -400,7 +400,7 @@ export default function IdeaFormPage() {
       {/* ── Duplicate warning (FR-02-06) ── */}
       {duplicates.length > 0 && !dupDismissed && (
         <div className="mb-6 p-4 rounded-xl bg-theme-accent/10 border border-warning/25 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-theme-accent flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-theme-accent shrink-0 mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-warning-text mb-1">
               Similar ideas may already exist — please review before submitting.
@@ -425,7 +425,7 @@ export default function IdeaFormPage() {
       {/* ── Global error ── */}
       {globalError && (
         <div role="alert" className="mb-6 p-4 rounded-xl bg-error-light border border-error/20 flex items-start gap-3 text-error-text text-sm">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           {globalError}
         </div>
       )}
@@ -449,7 +449,7 @@ export default function IdeaFormPage() {
               tabIndex={activeSection === s.id ? 0 : -1}
               onKeyDown={(e) => onSectionTabKeyDown(e, i)}
               onClick={() => setSection(s.id)}
-              className={`btn btn-sm flex-shrink-0 relative ${activeSection === s.id ? 'btn-primary' : 'btn-secondary'}`}
+              className={`btn btn-sm shrink-0 relative ${activeSection === s.id ? 'btn-primary' : 'btn-secondary'}`}
             >
               <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold" style={{ background: activeSection === s.id ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.05)' }}>
                 {s.num}
@@ -641,7 +641,7 @@ export default function IdeaFormPage() {
                       onChange={() => toggleBenefit(value)}
                       aria-label={label}
                     />
-                    <div className={`w-4 h-4 rounded flex items-center justify-center border-2 flex-shrink-0 transition-colors ${checked ? 'bg-theme-accent border-theme-accent' : 'border-theme-border'}`}>
+                    <div className={`w-4 h-4 rounded flex items-center justify-center border-2 shrink-0 transition-colors ${checked ? 'bg-theme-accent border-theme-accent' : 'border-theme-border'}`}>
                       {checked && <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                     </div>
                     <span className="text-sm font-medium">{label}</span>
@@ -722,17 +722,17 @@ export default function IdeaFormPage() {
                 {files.map((file, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-theme-surface/60 text-sm">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-8 h-8 rounded bg-theme-border flex items-center justify-center text-[11px] font-bold text-theme-text uppercase flex-shrink-0">
+                      <div className="w-8 h-8 rounded bg-theme-border flex items-center justify-center text-[11px] font-bold text-theme-text uppercase shrink-0">
                         {file.name.split('.').pop()}
                       </div>
                       <span className="text-theme-text truncate">{file.name}</span>
-                      <span className="text-theme-text0 flex-shrink-0">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
+                      <span className="text-theme-text0 shrink-0">{(file.size / 1024 / 1024).toFixed(1)} MB</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFile(idx)}
                       aria-label={`Remove ${file.name}`}
-                      className="ml-3 text-theme-text0 hover:text-error transition-colors flex-shrink-0"
+                      className="ml-3 text-theme-text0 hover:text-error transition-colors shrink-0"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -747,7 +747,7 @@ export default function IdeaFormPage() {
                 {existingIdea.attachments.map((att, idx) => (
                   <div key={idx} className="flex items-center gap-2 py-2 text-sm text-theme-text border-b border-theme-border/50">
                     <span className="truncate">{att.fileName}</span>
-                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-xs text-theme-accent hover:underline flex-shrink-0">View</a>
+                    <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-xs text-theme-accent hover:underline shrink-0">View</a>
                   </div>
                 ))}
               </div>
@@ -782,13 +782,13 @@ export default function IdeaFormPage() {
 
             {eventsError ? (
               <div className="flex items-center gap-3 p-4 rounded-xl alert-error text-sm">
-                <Info className="w-4 h-4 flex-shrink-0" />
+                <Info className="w-4 h-4 shrink-0" />
                 <span className="flex-1">Couldn't load the list of Ideathon events.</span>
                 <button type="button" className="btn btn-ghost btn-sm" onClick={() => refetchEvents()}>Retry</button>
               </div>
             ) : activeEvents.length === 0 ? (
               <div className="flex items-center gap-3 p-4 rounded-xl bg-theme-accent/10 border border-theme-accent/20 text-theme-accent text-sm">
-                <Info className="w-4 h-4 flex-shrink-0" />
+                <Info className="w-4 h-4 shrink-0" />
                 <span>No active Ideathon events available to link right now.</span>
               </div>
             ) : (

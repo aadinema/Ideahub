@@ -72,7 +72,7 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="page-enter max-w-[1400px] mx-auto pb-12">
+    <div className="page-enter max-w-350 mx-auto pb-12">
       <div className="mb-8">
         <h1 className="text-display text-3xl text-theme-text mb-2">Admin Control Center</h1>
         <p className="text-theme-text/80">Manage RBAC roles, department targets, evaluation criteria, announcements and the audit trail.</p>
@@ -870,7 +870,7 @@ function EventsTab({ queryClient }) {
           </div>
           <div>
             <label htmlFor="event-description" className="text-label block mb-2">Description</label>
-            <textarea id="event-description" className="input-base min-h-[80px]" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            <textarea id="event-description" className="input-base min-h-20" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -970,7 +970,7 @@ function EventsTab({ queryClient }) {
           </div>
           <div>
             <label htmlFor="extend-justification" className="text-label block mb-2">Justification <span className="text-error-text">*</span> <span className="text-theme-text0 font-normal">(min 20 chars)</span></label>
-            <textarea id="extend-justification" className="input-base min-h-[90px]" value={extendForm.justification} onChange={(e) => setExtendForm({ ...extendForm, justification: e.target.value })} placeholder="Why is the deadline being extended?" required />
+            <textarea id="extend-justification" className="input-base min-h-22.5" value={extendForm.justification} onChange={(e) => setExtendForm({ ...extendForm, justification: e.target.value })} placeholder="Why is the deadline being extended?" required />
           </div>
           <p className="text-xs text-theme-text0">All registered participants will be notified of the new deadline.</p>
           <div className="flex justify-end gap-3 pt-4 border-t border-theme-border/50">
@@ -1043,7 +1043,7 @@ function AuditTab() {
                   <td>{log.actorId?.name || 'System'}</td>
                   <td><span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-theme-accent/10 text-theme-accent uppercase">{log.action}</span></td>
                   <td>{log.entityType}</td>
-                  <td className="text-xs font-mono truncate max-w-[160px]">{log.entityId}</td>
+                  <td className="text-xs font-mono truncate max-w-40">{log.entityId}</td>
                 </tr>
               ))}
             </tbody>
